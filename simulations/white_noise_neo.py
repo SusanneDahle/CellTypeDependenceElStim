@@ -12,16 +12,7 @@ import brainsignals.neural_simulations as ns
 # parent_path = '/Users/susannedahle/Python/brainsignals'
 # sys.path.append(parent_path)
 
-import numpy as np
 import scipy.fftpack as ff
-# from quantities import Hz
-import neuron
-import LFPy
-import brainsignals.neural_simulations as ns
-
-import os
-from os.path import join
-from glob import glob
 
 
 ns.load_mechs_from_folder(ns.cell_models_folder)
