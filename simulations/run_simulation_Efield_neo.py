@@ -16,7 +16,6 @@ not_working_plot_cells = []
 
 # ns.compile_bbp_mechanisms(neurons[0]) # Compile once, before running jobs in paralell
 
-
 def return_BBP_neuron(cell_name, tstop, dt):
 
     # load some required neuron-interface files
@@ -519,9 +518,6 @@ if __name__=='__main__':
     freq2 = np.arange(10, 100, 10)
     freq3 = np.arange(100, 2200, 100) # Longer steplength to save calculation time
     freq = sorted(np.concatenate((freq1, freq2, freq3)))
-    
-    test_freq = np.arange(10, 20, 10)
-    test_neur_slice = neur_slice[:4]
 
     run_passive_simulation_Ez(freq, neur_slice, remove_list, tstop, dt, cutoff, job_nr)
 
