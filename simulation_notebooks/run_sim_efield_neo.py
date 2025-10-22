@@ -99,9 +99,9 @@ def run_passive_simulation_Ex(freq,
                               dt, 
                               cutoff,
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/neocortical'):
+                              directory='/mnt/SCRATCH/susandah/output/vmem_neo'):
 
-    amp_data_filename = f'amp_data_neocortical_Ex_frange={freq[0]}-{freq[-1]}.npy'
+    amp_data_filename = f'vmem_amp_data_neocortical_Ex_frange={freq[0]}-{freq[-1]}.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
     
     # Initialize or load existing data
@@ -190,9 +190,9 @@ def run_passive_simulation_Ey(freq,
                               dt, 
                               cutoff,
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/neocortical'):
+                              directory='/mnt/SCRATCH/susandah/output/vmem_neo'):
 
-    amp_data_filename = f'amp_data_neocortical_Ey_frange={freq[0]}-{freq[-1]}.npy'
+    amp_data_filename = f'vmem_amp_data_neocortical_Ey_frange={freq[0]}-{freq[-1]}.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
 
     # Initialize or load existing data
@@ -280,10 +280,10 @@ def run_passive_simulation_Ez(freq,
                               dt, 
                               cutoff,
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/neocortical',
+                              directory='/mnt/SCRATCH/susandah/output/vmem_neo',
                               plot_data_filename = 'plot_data_neocortical'):
 
-    amp_data_filename = f'amp_data_neocortical_with_abs_frange={freq[0]}-{freq[-1]}.npy'
+    amp_data_filename = f'vmem_amp_data_neocortical_Ez_frange={freq[0]}-{freq[-1]}.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
     plot_data_filename = f'{plot_data_filename}_frange={freq[0]}-{freq[-1]}.npy'
     plot_data_file_path = os.path.join(directory, plot_data_filename)
