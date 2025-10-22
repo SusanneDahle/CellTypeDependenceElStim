@@ -383,7 +383,6 @@ def run_passive_simulation_Ez(freq,
 
                 # Dendrites in z-direction:
                 n_dend_z_dir = 0
-                tot_z_diam_cos = 0
                 tot_x_diam_abs = 0
                 tot_y_diam_abs = 0
                 tot_z_diam_abs = 0
@@ -391,12 +390,6 @@ def run_passive_simulation_Ez(freq,
                     dz = cell.z[idx,0] - cell.z[idx,1]
                     dx = cell.x[idx,0] - cell.x[idx,1]
                     dy = cell.y[idx,0] - cell.y[idx,1]
-
-                    vec_len = np.sqrt(dz**2 + dx**2 + dy**2)
-                    cos_theta = abs(dz)/vec_len
-
-                    if cos_theta > 0.72:
-                        tot_z_diam_cos += cell.d[idx]
 
                     if abs(dz) > abs(dx) and abs(dz) > abs(dy):
                         tot_z_diam_abs += cell.d[idx]
@@ -406,8 +399,6 @@ def run_passive_simulation_Ez(freq,
                     elif abs(dy) > abs(dx) and abs(dy) > abs(dz):
                         tot_y_diam_abs += cell.d[idx]
                 
-                sum_diam = tot_x_diam_abs + tot_y_diam_abs + tot_z_diam_abs
-                relative_z_diam = tot_z_diam_abs / sum_diam 
                 avg_z_diam = tot_z_diam_abs/n_dend_z_dir
 
                 # Store data in dictionary
@@ -415,19 +406,12 @@ def run_passive_simulation_Ez(freq,
                     amp_data[cell_name] = {
                         'freq': [],
                         'soma_amp': [],
-                        'closest_z_endpoint': closest_z_endpoint,
-                        'distant_z_endpoint': distant_z_endpoint,
                         'upper_z_endpoint': upper_z_endpoint,
                         'bottom_z_endpoint': bottom_z_endpoint,
                         'total_len': total_z_len,
                         'relative_z_len': relative_z_len,
                         'symmetry_factor': symmetry_factor,
-                        'number_of_soma_dendrites': number_of_soma_dendrites,
-                        'total_diam_soma_dendrites': total_diam_soma_dendrites,
                         'soma_diam': soma_diam,
-                        'tot_z_diam_cos': tot_z_diam_cos,
-                        'tot_z_diam_abs': tot_z_diam_abs,
-                        'relative_z_diam': relative_z_diam,
                         'avg_z_diam': avg_z_diam       
                     }
 
