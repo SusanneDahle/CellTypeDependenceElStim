@@ -103,8 +103,6 @@ def run_passive_simulation_Ex(freq,
 
     amp_data_filename = f'amp_data_neocortical_Ex_frange={freq[0]}-{freq[-1]}.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
-    # plot_data_filename = f'plot_data_neocortical_frange={freq[0]}-{freq[-1]}.npy'
-    # plot_data_file_path = os.path.join(directory, plot_data_filename)
     
     # Initialize or load existing data
     if os.path.exists(amp_data_file_path):
@@ -112,12 +110,6 @@ def run_passive_simulation_Ex(freq,
     else:
         amp_data = {}
         amp_file_exist = False
-
-    # if os.path.exists(plot_data_file_path):
-    #     plot_data = np.load(plot_data_file_path, allow_pickle=True).item()
-    # else:
-    #     plot_data = {}
-    #     plot_file_exist = False
 
     local_ext_pot = np.vectorize(lambda x, y, z: local_E_field * x / 1000)
     n_tsteps_ = int((tstop + cutoff) / dt + 1)
@@ -158,94 +150,13 @@ def run_passive_simulation_Ex(freq,
                 cut_soma_vmem = cell.vmem[0, cell.tvec > 2000]
                 freqs, vmem_amps = ns.return_freq_and_amplitude(cut_tvec, cut_soma_vmem)
                 freq_idx = np.argmin(np.abs(freqs - f))
-                soma_amp = vmem_amps[0, freq_idx]
-
-                # Distance from soma to closest endpoint                  
-                upper_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=10000)]
-                bottom_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=-10000)]
-                closest_z_endpoint = min(upper_z_endpoint, abs(bottom_z_endpoint))
-                distant_z_endpoint = max(upper_z_endpoint, abs(bottom_z_endpoint))
-                total_z_len = closest_z_endpoint + distant_z_endpoint
-
-                upper_x_endpoint = cell.x.mean(axis=-1)[cell.get_closest_idx(x=10000)]
-                bottom_x_endpoint = cell.x.mean(axis=-1)[cell.get_closest_idx(x=-10000)]
-                closest_x_endpoint = min(upper_x_endpoint, abs(bottom_x_endpoint))
-                distant_x_endpoint = max(upper_x_endpoint, abs(bottom_x_endpoint))
-                total_len_x_direction = closest_x_endpoint + distant_x_endpoint
-
-                upper_y_endpoint = cell.y.mean(axis=-1)[cell.get_closest_idx(y=10000)]
-                bottom_y_endpoint = cell.y.mean(axis=-1)[cell.get_closest_idx(y=-10000)]
-                closest_y_endpoint = min(upper_y_endpoint, abs(bottom_y_endpoint))
-                distant_y_endpoint = max(upper_y_endpoint, abs(bottom_y_endpoint))
-                total_len_y_direction = closest_y_endpoint + distant_y_endpoint
-
-                total_len = total_z_len + total_len_x_direction + total_len_y_direction
-
-                relative_x_len = total_len_x_direction/total_len
-                symmetry_factor_x_direction = closest_x_endpoint/distant_x_endpoint
-
-                # Dendrites connected to Soma:
-                soma_name = None
-                for sec in cell.allseclist:
-                    if 'soma[0]' in sec.name():
-                        soma_name = sec.name()
-                child_list = cell.get_idx_children(parent=soma_name)
-
-                number_of_soma_dendrites = len(child_list)
-
-                dend_diam_to_soma = cell.d[child_list]
-                total_diam_soma_dendrites = np.sum(dend_diam_to_soma)
-                soma_diam = cell.d[0]
-
-                # Dendrites in x-direction:
-                tot_x_diam_cos = 0
-                tot_x_diam_abs = 0
-                tot_y_diam_abs = 0
-                tot_z_diam_abs = 0
-                for idx in range(cell.totnsegs):
-                    dz = cell.z[idx,0] - cell.z[idx,1]
-                    dx = cell.x[idx,0] - cell.x[idx,1]
-                    dy = cell.y[idx,0] - cell.y[idx,1]
-
-                    vec_len = np.sqrt(dz**2 + dx**2 + dy**2)
-                    cos_theta = abs(dx)/vec_len
-
-                    #numb_x_comp_cos = 0
-                    #numb_x_comp_abs = 0
-
-                    if cos_theta > 0.72:
-                        #numb_x_comp_cos +=1
-                        tot_x_diam_cos += cell.d[idx]
-
-                    if abs(dx) > abs(dz) and abs(dx) > abs(dy):
-                        #numb_x_comp_abs += 1
-                        tot_x_diam_abs += cell.d[idx]
-                    elif abs(dy) > abs(dx) and abs(dy) > abs(dz):
-                        tot_y_diam_abs += cell.d[idx]
-                    elif abs(dz) > abs(dx) and abs(dz) > abs(dy):
-                        tot_z_diam_abs += cell.d[idx]
-
-                sum_diam = tot_x_diam_abs + tot_y_diam_abs + tot_z_diam_abs
-                relative_x_diam = tot_x_diam_abs / sum_diam            
+                soma_amp = vmem_amps[0, freq_idx]    
 
                 # Store data in dictionary
                 if cell_name not in amp_data:
                     amp_data[cell_name] = {
                         'freq': [],
-                        'soma_amp': [],
-                        'closest_z_endpoint': closest_x_endpoint,
-                        'distant_z_endpoint': distant_x_endpoint,
-                        'upper_z_endpoint': upper_x_endpoint,
-                        'bottom_z_endpoint': bottom_x_endpoint,
-                        'total_len': total_len_x_direction,
-                        'relative_x_len': relative_x_len,
-                        'symmetry_factor': symmetry_factor_x_direction,
-                        'number_of_soma_dendrites': number_of_soma_dendrites,
-                        'total_diam_soma_dendrites': total_diam_soma_dendrites,
-                        'soma_diam': soma_diam,
-                        'tot_z_diam_cos': tot_x_diam_cos,
-                        'tot_z_diam_abs': tot_x_diam_abs,
-                        'relative_x_diam': relative_x_diam
+                        'soma_amp': []
                     }
                 
                 amp_data[cell_name]['freq'].append(f)
@@ -258,44 +169,6 @@ def run_passive_simulation_Ex(freq,
             except:
                 cell_failed_simulation = True
                 break
-            
-            # if f in [10, 100, 1000]:
-            #     try:
-            #         print(f"Storing data for selected frequency: {f} Hz")
-            #         amplitudes = []
-            #         for idx in range(cell.totnsegs):
-            #             cut_vmem = cell.vmem[idx, cell.tvec > 2000]
-            #             freqs, vmem_amps = ns.return_freq_and_amplitude(cut_tvec, cut_vmem)
-            #             freq_idx = np.argmin(np.abs(freqs - f))
-            #             amplitude = vmem_amps[0, freq_idx]
-            #             amplitudes.append(amplitude)
-
-            #         if cell_name not in plot_data:
-            #             plot_data[cell_name] = {
-            #                 'freq': [],
-            #                 'x': [],
-            #                 'z': [],
-            #                 'amplitudes': [],
-            #                 'totnsegs': [],
-            #                 'tvec': [],
-            #                 'vmem': []
-            #             }
-
-            #         plot_data[cell_name]['freq'].append(f)
-            #         plot_data[cell_name]['x'].append(cell.x.tolist())
-            #         plot_data[cell_name]['z'].append(cell.z.tolist())
-            #         plot_data[cell_name]['amplitudes'].append(amplitudes)
-            #         plot_data[cell_name]['totnsegs'].append(cell.totnsegs)
-            #         plot_data[cell_name]['tvec'].append(cell.tvec.tolist())
-            #         plot_data[cell_name]['vmem'].append(cell.vmem[0].tolist())
-
-            #         # Save plot data to .npy file
-            #         np.save(plot_data_file_path, plot_data)
-            #         print(f"Plot data has been saved to {os.path.abspath(plot_data_file_path)}")
-                    
-            #     except:
-            #         cell_failed_plotting = True
-            #         break
             
             del cell
             print(f"{f} Hz complete for {cell_name}")
@@ -321,21 +194,12 @@ def run_passive_simulation_Ey(freq,
 
     amp_data_filename = f'amp_data_neocortical_Ey_frange={freq[0]}-{freq[-1]}.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
-    # plot_data_filename = f'plot_data_neocortical_Ey_frange={freq[0]}-{freq[-1]}.npy'
-    # plot_data_file_path = os.path.join(directory, plot_data_filename)
-    
+
     # Initialize or load existing data
     if os.path.exists(amp_data_file_path):
         amp_data = np.load(amp_data_file_path, allow_pickle=True).item()
     else:
         amp_data = {}
-        amp_file_exist = False
-
-    # if os.path.exists(plot_data_file_path):
-    #     plot_data = np.load(plot_data_file_path, allow_pickle=True).item()
-    # else:
-    #     plot_data = {}
-    #     plot_file_exist = False
 
     local_ext_pot = np.vectorize(lambda x, y, z: local_E_field * y / 1000)
     n_tsteps_ = int((tstop + cutoff) / dt + 1)
@@ -378,88 +242,11 @@ def run_passive_simulation_Ey(freq,
                 freq_idx = np.argmin(np.abs(freqs - f))
                 soma_amp = vmem_amps[0, freq_idx]
 
-                # Distance from soma to closest endpoint                  
-                upper_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=10000)]
-                bottom_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=-10000)]
-                closest_z_endpoint = min(upper_z_endpoint, abs(bottom_z_endpoint))
-                distant_z_endpoint = max(upper_z_endpoint, abs(bottom_z_endpoint))
-                total_z_len = closest_z_endpoint + distant_z_endpoint
-
-                upper_x_endpoint = cell.x.mean(axis=-1)[cell.get_closest_idx(x=10000)]
-                bottom_x_endpoint = cell.x.mean(axis=-1)[cell.get_closest_idx(x=-10000)]
-                closest_x_endpoint = min(upper_x_endpoint, abs(bottom_x_endpoint))
-                distant_x_endpoint = max(upper_x_endpoint, abs(bottom_x_endpoint))
-                total_len_x_direction = closest_x_endpoint + distant_x_endpoint
-
-                upper_y_endpoint = cell.y.mean(axis=-1)[cell.get_closest_idx(y=10000)]
-                bottom_y_endpoint = cell.y.mean(axis=-1)[cell.get_closest_idx(y=-10000)]
-                closest_y_endpoint = min(upper_y_endpoint, abs(bottom_y_endpoint))
-                distant_y_endpoint = max(upper_y_endpoint, abs(bottom_y_endpoint))
-                total_len_y_direction = closest_y_endpoint + distant_y_endpoint
-
-                total_len = total_z_len + total_len_x_direction + total_len_y_direction
-
-                relative_y_len = total_len_y_direction/total_len
-                symmetry_factor_y_direction = closest_y_endpoint/distant_y_endpoint
-
-                # Dendrites connected to Soma:
-                soma_name = None
-                for sec in cell.allseclist:
-                    if 'soma[0]' in sec.name():
-                        soma_name = sec.name()
-                child_list = cell.get_idx_children(parent=soma_name)
-
-                number_of_soma_dendrites = len(child_list)
-
-                dend_diam_to_soma = cell.d[child_list]
-                total_diam_soma_dendrites = np.sum(dend_diam_to_soma)
-
-                soma_diam = cell.d[0]
-
-                # Dendrites in y-direction:
-                tot_y_diam_cos = 0
-                tot_x_diam_abs = 0
-                tot_y_diam_abs = 0
-                tot_z_diam_abs = 0
-                for idx in range(cell.totnsegs):
-                    dz = cell.z[idx,0] - cell.z[idx,1]
-                    dx = cell.x[idx,0] - cell.x[idx,1]
-                    dy = cell.y[idx,0] - cell.y[idx,1]
-
-                    vec_len = np.sqrt(dz**2 + dx**2 + dy**2)
-                    cos_theta = abs(dy)/vec_len
-
-                    if cos_theta > 0.72:
-                        tot_y_diam_cos += cell.d[idx]
-
-                    if abs(dy) > abs(dx) and abs(dy) > abs(dz):
-                        tot_y_diam_abs += cell.d[idx]
-                    elif abs(dx) > abs(dz) and abs(dx) > abs(dy):
-                        tot_x_diam_abs += cell.d[idx]
-                    elif abs(dz) > abs(dx) and abs(dz) > abs(dy):
-                        tot_z_diam_abs += cell.d[idx]
-                
-                sum_diam = tot_x_diam_abs + tot_y_diam_abs + tot_z_diam_abs
-                relative_y_diam = tot_y_diam_abs / sum_diam
-
                 # Store data in dictionary
                 if cell_name not in amp_data:
                     amp_data[cell_name] = {
                         'freq': [],
-                        'soma_amp': [],
-                        'closest_z_endpoint': closest_y_endpoint,
-                        'distant_z_endpoint': distant_y_endpoint,
-                        'upper_z_endpoint': upper_y_endpoint,
-                        'bottom_z_endpoint': bottom_y_endpoint,
-                        'total_len': total_len_y_direction,
-                        'relative_y_len': relative_y_len,
-                        'symmetry_factor': symmetry_factor_y_direction,
-                        'number_of_soma_dendrites': number_of_soma_dendrites,
-                        'total_diam_soma_dendrites': total_diam_soma_dendrites,
-                        'soma_diam': soma_diam,
-                        'tot_z_diam_cos': tot_y_diam_cos,
-                        'tot_z_diam_abs': tot_y_diam_abs,
-                        'relative_y_diam': relative_y_diam       
+                        'soma_amp': [],    
                     }
                 
                 amp_data[cell_name]['freq'].append(f)
@@ -472,44 +259,6 @@ def run_passive_simulation_Ey(freq,
             except:
                 cell_failed_simulation = True
                 break
-            
-            # if f in [10, 100, 1000]:
-            #     try:
-            #         print(f"Storing data for selected frequency: {f} Hz")
-            #         amplitudes = []
-            #         for idx in range(cell.totnsegs):
-            #             cut_vmem = cell.vmem[idx, cell.tvec > 2000]
-            #             freqs, vmem_amps = ns.return_freq_and_amplitude(cut_tvec, cut_vmem)
-            #             freq_idx = np.argmin(np.abs(freqs - f))
-            #             amplitude = vmem_amps[0, freq_idx]
-            #             amplitudes.append(amplitude)
-
-            #         if cell_name not in plot_data:
-            #             plot_data[cell_name] = {
-            #                 'freq': [],
-            #                 'x': [],
-            #                 'z': [],
-            #                 'amplitudes': [],
-            #                 'totnsegs': [],
-            #                 'tvec': [],
-            #                 'vmem': []
-            #             }
-
-            #         plot_data[cell_name]['freq'].append(f)
-            #         plot_data[cell_name]['x'].append(cell.x.tolist())
-            #         plot_data[cell_name]['z'].append(cell.z.tolist())
-            #         plot_data[cell_name]['amplitudes'].append(amplitudes)
-            #         plot_data[cell_name]['totnsegs'].append(cell.totnsegs)
-            #         plot_data[cell_name]['tvec'].append(cell.tvec.tolist())
-            #         plot_data[cell_name]['vmem'].append(cell.vmem[0].tolist())
-
-            #         # Save plot data to .npy file
-            #         np.save(plot_data_file_path, plot_data)
-            #         print(f"Plot data has been saved to {os.path.abspath(plot_data_file_path)}")
-                    
-            #     except:
-            #         cell_failed_plotting = True
-            #         break
             
             del cell
             print(f"{f} Hz complete for {cell_name}")
@@ -531,13 +280,13 @@ def run_passive_simulation_Ez(freq,
                               dt, 
                               cutoff,
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/neocortical'):
-                              # plot_data_filename = 'plot_data_neocortical',
+                              directory='/mnt/SCRATCH/susandah/output/neocortical',
+                              plot_data_filename = 'plot_data_neocortical'):
 
     amp_data_filename = f'amp_data_neocortical_with_abs_frange={freq[0]}-{freq[-1]}.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
-#    plot_data_filename = f'{plot_data_filename}_frange={freq[0]}-{freq[-1]}.npy'
-#    plot_data_file_path = os.path.join(directory, plot_data_filename)
+    plot_data_filename = f'{plot_data_filename}_frange={freq[0]}-{freq[-1]}.npy'
+    plot_data_file_path = os.path.join(directory, plot_data_filename)
     
     # Initialize or load existing data
     if os.path.exists(amp_data_file_path):
@@ -546,11 +295,11 @@ def run_passive_simulation_Ez(freq,
         amp_data = {}
         amp_file_exist = False
 
-    # if os.path.exists(plot_data_file_path):
-    #     plot_data = np.load(plot_data_file_path, allow_pickle=True).item()
-    # else:
-    #     plot_data = {}
-    #     plot_file_exist = False
+    if os.path.exists(plot_data_file_path):
+        plot_data = np.load(plot_data_file_path, allow_pickle=True).item()
+    else:
+        plot_data = {}
+        plot_file_exist = False
 
     local_ext_pot = np.vectorize(lambda x, y, z: local_E_field * z / 1000)
     n_tsteps_ = int((tstop + cutoff) / dt + 1)
@@ -693,43 +442,43 @@ def run_passive_simulation_Ez(freq,
                 cell_failed_simulation = True
                 break
             
-            # if f in [10, 100, 1000]:
-            #     try:
-            #         print(f"Storing data for selected frequency: {f} Hz")
-            #         amplitudes = []
-            #         for idx in range(cell.totnsegs):
-            #             cut_vmem = cell.vmem[idx, cell.tvec > 2000]
-            #             freqs, vmem_amps = ns.return_freq_and_amplitude(cut_tvec, cut_vmem)
-            #             freq_idx = np.argmin(np.abs(freqs - f))
-            #             amplitude = vmem_amps[0, freq_idx]
-            #             amplitudes.append(amplitude)
+            if f in [10, 100, 1000]:
+                try:
+                    print(f"Storing data for selected frequency: {f} Hz")
+                    amplitudes = []
+                    for idx in range(cell.totnsegs):
+                        cut_vmem = cell.vmem[idx, cell.tvec > 2000]
+                        freqs, vmem_amps = ns.return_freq_and_amplitude(cut_tvec, cut_vmem)
+                        freq_idx = np.argmin(np.abs(freqs - f))
+                        amplitude = vmem_amps[0, freq_idx]
+                        amplitudes.append(amplitude)
 
-            #         if cell_name not in plot_data:
-            #             plot_data[cell_name] = {
-            #                 'freq': [],
-            #                 'x': [],
-            #                 'z': [],
-            #                 'amplitudes': [],
-            #                 'totnsegs': [],
-            #                 'tvec': [],
-            #                 'vmem': []
-            #             }
+                    if cell_name not in plot_data:
+                        plot_data[cell_name] = {
+                            'freq': [],
+                            'x': [],
+                            'z': [],
+                            'amplitudes': [],
+                            'totnsegs': [],
+                            'tvec': [],
+                            'vmem': []
+                        }
 
-            #         plot_data[cell_name]['freq'].append(f)
-            #         plot_data[cell_name]['x'].append(cell.x.tolist())
-            #         plot_data[cell_name]['z'].append(cell.z.tolist())
-            #         plot_data[cell_name]['amplitudes'].append(amplitudes)
-            #         plot_data[cell_name]['totnsegs'].append(cell.totnsegs)
-            #         plot_data[cell_name]['tvec'].append(cell.tvec.tolist())
-            #         plot_data[cell_name]['vmem'].append(cell.vmem[0].tolist())
+                    plot_data[cell_name]['freq'].append(f)
+                    plot_data[cell_name]['x'].append(cell.x.tolist())
+                    plot_data[cell_name]['z'].append(cell.z.tolist())
+                    plot_data[cell_name]['amplitudes'].append(amplitudes)
+                    plot_data[cell_name]['totnsegs'].append(cell.totnsegs)
+                    plot_data[cell_name]['tvec'].append(cell.tvec.tolist())
+                    plot_data[cell_name]['vmem'].append(cell.vmem[0].tolist())
 
-            #         # Save plot data to .npy file
-            #         np.save(plot_data_file_path, plot_data)
-            #         print(f"Plot data has been saved to {os.path.abspath(plot_data_file_path)}")
+                    # Save plot data to .npy file
+                    np.save(plot_data_file_path, plot_data)
+                    print(f"Plot data has been saved to {os.path.abspath(plot_data_file_path)}")
                     
-            #     except:
-            #         cell_failed_plotting = True
-            #         break
+                except:
+                    cell_failed_plotting = True
+                    break
             
             del cell
             print(f"{f} Hz complete for {cell_name}")
