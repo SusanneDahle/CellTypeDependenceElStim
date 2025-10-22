@@ -99,7 +99,7 @@ def run_passive_simulation_Ex(freq,
                               dt, 
                               cutoff,
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/neocortical_1'):
+                              directory='/mnt/SCRATCH/susandah/output/neocortical'):
 
     amp_data_filename = f'amp_data_neocortical_Ex_frange={freq[0]}-{freq[-1]}.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
