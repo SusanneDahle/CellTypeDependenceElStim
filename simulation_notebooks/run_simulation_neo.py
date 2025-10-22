@@ -293,13 +293,11 @@ def run_passive_simulation_Ez(freq,
         amp_data = np.load(amp_data_file_path, allow_pickle=True).item()
     else:
         amp_data = {}
-        amp_file_exist = False
 
     if os.path.exists(plot_data_file_path):
         plot_data = np.load(plot_data_file_path, allow_pickle=True).item()
     else:
         plot_data = {}
-        plot_file_exist = False
 
     local_ext_pot = np.vectorize(lambda x, y, z: local_E_field * z / 1000)
     n_tsteps_ = int((tstop + cutoff) / dt + 1)
@@ -342,43 +340,17 @@ def run_passive_simulation_Ez(freq,
                 freq_idx = np.argmin(np.abs(freqs - f))
                 soma_amp = vmem_amps[0, freq_idx]
 
-                # Distance from soma to closest endpoint                  
+                # Length and symmetry factor             
                 upper_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=10000)]
                 bottom_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=-10000)]
+
                 closest_z_endpoint = min(upper_z_endpoint, abs(bottom_z_endpoint))
                 distant_z_endpoint = max(upper_z_endpoint, abs(bottom_z_endpoint))
+
                 total_z_len = closest_z_endpoint + distant_z_endpoint
-
-                upper_x_endpoint = cell.x.mean(axis=-1)[cell.get_closest_idx(x=10000)]
-                bottom_x_endpoint = cell.x.mean(axis=-1)[cell.get_closest_idx(x=-10000)]
-                closest_x_endpoint = min(upper_x_endpoint, abs(bottom_x_endpoint))
-                distant_x_endpoint = max(upper_x_endpoint, abs(bottom_x_endpoint))
-                total_len_x_direction = closest_x_endpoint + distant_x_endpoint
-
-                upper_y_endpoint = cell.y.mean(axis=-1)[cell.get_closest_idx(y=10000)]
-                bottom_y_endpoint = cell.y.mean(axis=-1)[cell.get_closest_idx(y=-10000)]
-                closest_y_endpoint = min(upper_y_endpoint, abs(bottom_y_endpoint))
-                distant_y_endpoint = max(upper_y_endpoint, abs(bottom_y_endpoint))
-                total_len_y_direction = closest_y_endpoint + distant_y_endpoint
-
-                total_len = total_z_len + total_len_x_direction + total_len_y_direction
-
-                relative_z_len = total_z_len/total_len
-
                 symmetry_factor = closest_z_endpoint/distant_z_endpoint
 
-                # Dendrites connected to Soma:
-                soma_name = None
-                for sec in cell.allseclist:
-                    if 'soma[0]' in sec.name():
-                        soma_name = sec.name()
-                child_list = cell.get_idx_children(parent=soma_name)
-
-                number_of_soma_dendrites = len(child_list)
-
-                dend_diam_to_soma = cell.d[child_list]
-                total_diam_soma_dendrites = np.sum(dend_diam_to_soma)
-
+                # Soma diam
                 soma_diam = cell.d[0]
 
                 # Dendrites in z-direction:
@@ -409,7 +381,6 @@ def run_passive_simulation_Ez(freq,
                         'upper_z_endpoint': upper_z_endpoint,
                         'bottom_z_endpoint': bottom_z_endpoint,
                         'total_len': total_z_len,
-                        'relative_z_len': relative_z_len,
                         'symmetry_factor': symmetry_factor,
                         'soma_diam': soma_diam,
                         'avg_z_diam': avg_z_diam       
