@@ -144,7 +144,7 @@ def run_white_noise_imem(tstop,
                          tvec,
                          t0_idx,
                          imem_data_filename='plot_imem_data',
-                         directory='/Users/susannedahle/CellTypeDependenceElStim/sim_imem_data_ideal'
+                         directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'
                         ):
     
     imem_data_filename = f'{imem_data_filename}.npy'
