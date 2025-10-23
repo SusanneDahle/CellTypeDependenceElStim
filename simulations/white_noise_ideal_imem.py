@@ -6,6 +6,7 @@ import os
 from os.path import join
 from glob import glob
 import brainsignals.neural_simulations as ns
+import scipy.fftpack as ff
 
 h = neuron.h
 
@@ -286,4 +287,32 @@ def run_white_noise_imem(tstop,
 
 
 
+if __name__=='__main__':
+    upper_len_1 = np.array([1000])
+    bottom_len_1 = np.array([-500])
+    dend_diam_1 = np.array([2])
+    soma_diam_1 = np.array([20])
 
+    upper_len_2 = np.array([200])
+    bottom_len_2 = np.array([-100])
+    dend_diam_2 = np.array([2])
+    soma_diam_2 = np.array([20])
+
+    cut_off = 200
+    tstop = 2**12 + cut_off
+    dt = 2**-6
+
+    rate = 5000 # * Hz
+    freqs_limit = 10**4
+
+    # Common setup
+    num_tsteps = int(tstop / dt + 1)
+    tvec = np.arange(num_tsteps) * dt
+    t0_idx = np.argmin(np.abs(tvec - cut_off))
+
+    sample_freq = ff.fftfreq(num_tsteps - t0_idx, d=dt / 1000)
+    pidxs = np.where(sample_freq >= 0)
+    freqs = sample_freq[pidxs]
+
+    run_white_noise_imem(tstop, dt,freqs, freqs_limit, soma_diam_1, dend_diam_1, upper_len_1, bottom_len_1, tvec, t0_idx)
+    run_white_noise_imem(tstop, dt,freqs, freqs_limit, soma_diam_2, dend_diam_2, upper_len_2, bottom_len_2, tvec, t0_idx)
