@@ -17,9 +17,6 @@ ns.load_mechs_from_folder(ns.cell_models_folder)
 
 h = neuron.h
 
-cell_models_folder = '/mnt/users/susandah/neuron_stimulation/brainsignals/cell_models'
-bbp_mod_folder = join(cell_models_folder, "bbp_mod")                        # Mappen med ulike parametere og mekanismer 
-
 
 def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam_1=2, apic_dend_diam_2=2, apic_upper_len = 1000, apic_bottom_len = -200):
 
