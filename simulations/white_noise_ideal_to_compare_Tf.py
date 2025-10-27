@@ -9,12 +9,7 @@ import brainsignals.neural_simulations as ns
 
 import scipy.fftpack as ff
 
-
-ns.load_mechs_from_folder(ns.cell_models_folder)
 np.random.seed(1534)
-
-ns.load_mechs_from_folder(ns.cell_models_folder)
-
 h = neuron.h
 
 
