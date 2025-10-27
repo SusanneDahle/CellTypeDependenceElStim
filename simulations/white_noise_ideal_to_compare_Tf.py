@@ -151,8 +151,8 @@ def run_white_noise_ideal(tstop,
                              soma_diam, dend_diam_1, dend_diam_2, upper_len, bottom_len,
                              tvec,
                              t0_idx,
-                             multipole_data_filename='multipole_data_ideal_cdm_per_input_current_diff_diam',
-                             directory='/Users/susannedahle/Python/sim_data_white_noise'
+                             multipole_data_filename='compare_wn_ideal_tf',
+                             directory='/Users/susannedahle/CellTypeDependenceElStim'
                              ):
     
     multipole_data_filename = f'{multipole_data_filename}.npy'
