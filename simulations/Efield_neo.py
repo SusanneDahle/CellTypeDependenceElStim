@@ -101,7 +101,7 @@ def run_passive_simulation_Ex(freq,
                               cutoff,
                               # job_nr, if splitted jobs during sim
                               local_E_field=1,  # V/m
-                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'):
+                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data/vmem_data_neo'):
 
     # amp_data_filename = f'vmem_amp_data_neo_Ex_{job_nr}.npy' # If splitted jobs
     amp_data_filename = f'vmem_amp_data_neo_Ex.npy'
@@ -192,7 +192,7 @@ def run_passive_simulation_Ey(freq,
                               cutoff,
                               # job_nr, if splitted jobs during sim
                               local_E_field=1,  # V/m
-                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'):
+                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data/vmem_data_neo'):
 
     # amp_data_filename = f'vmem_amp_data_neo_Ey_{job_nr}.npy' # If splitted jobs
     amp_data_filename = f'vmem_amp_data_neo_Ey.npy'
@@ -284,7 +284,7 @@ def run_passive_simulation_Ez(freq,
                               cutoff,
                               # job_nr, if splitted jobs during sim
                               local_E_field=1,  # V/m
-                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'):
+                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data/vmem_data_neo'):
 
     # amp_data_filename = f'vmem_amp_data_neo_Ez_{job_nr}.npy' # If splitted jobs
     amp_data_filename = f'vmem_amp_data_neo_Ez.npy'
