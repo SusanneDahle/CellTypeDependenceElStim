@@ -17,9 +17,6 @@ ns.load_mechs_from_folder(ns.cell_models_folder)
 
 h = neuron.h
 
-all_cells_folder = '/mnt/users/susandah/neuron_stimulation/all_cells_folder'
-bbp_folder = os.path.abspath(all_cells_folder)                              # Make this the bbp_folder
-
 cell_models_folder = '/mnt/users/susandah/neuron_stimulation/brainsignals/cell_models'
 bbp_mod_folder = join(cell_models_folder, "bbp_mod")                        # Mappen med ulike parametere og mekanismer 
 
