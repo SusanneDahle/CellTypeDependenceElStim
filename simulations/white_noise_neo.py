@@ -1,5 +1,5 @@
 import os
-import sys
+# import sys # If job split
 from os.path import join
 
 from glob import glob
@@ -9,11 +9,7 @@ import neuron
 import LFPy
 import brainsignals.neural_simulations as ns
 
-# parent_path = '/Users/susannedahle/Python/brainsignals'
-# sys.path.append(parent_path)
-
 import scipy.fftpack as ff
-
 
 ns.load_mechs_from_folder(ns.cell_models_folder)
 np.random.seed(1534)
@@ -180,13 +176,14 @@ def run_white_noise_stim(freqs,
                          neurons,
                          tvec,
                          t0_idx,
-                         job_nr,
-                         cdm_data_filename='cdm_and_avg_imem_data_neo',
-                         directory='/mnt/SCRATCH/susandah/output/white_noise_final',
+                         # job_nr, # if splitted jobs during sim
+                         cdm_data_filename='cdm_and_imem_data_neo',
+                         directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data',
                          plot_imem_filename = 'plot_imem',
                          ):
     
-    cdm_data_filename = f'{cdm_data_filename}_{job_nr}.npy'
+    # cdm_data_filename = f'{cdm_data_filename}_{job_nr}.npy' # If splitted jobs
+    cdm_data_filename = f'{cdm_data_filename}.npy'
     cdm_data_file_path = os.path.join(directory, cdm_data_filename)
     failed_cells = []
     
@@ -196,7 +193,8 @@ def run_white_noise_stim(freqs,
     else:
         cdm_data = {}
     
-    plot_imem_filename = f'{plot_imem_filename}_{job_nr}.npy'
+    # plot_imem_filename = f'{plot_imem_filename}_{job_nr}.npy' # If splitted jobs
+    plot_imem_filename = f'{plot_imem_filename}.npy'
     plot_imem_file_path = os.path.join(directory, plot_imem_filename)
 
     # Initialize or load existing plot data
@@ -404,10 +402,10 @@ if __name__=='__main__':
 
     h = neuron.h
 
-    all_cells_folder = '/mnt/users/susandah/neuron_stimulation/all_cells_folder'
+    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder'
     bbp_folder = os.path.abspath(all_cells_folder)                              # Make this the bbp_folder
 
-    cell_models_folder = '/mnt/users/susandah/neuron_stimulation/brainsignals/cell_models'
+    cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models'
     bbp_mod_folder = join(cell_models_folder, "bbp_mod")                        # Mappen med ulike parametere og mekanismer 
 
     # List to store the neuron names
@@ -422,29 +420,6 @@ if __name__=='__main__':
                 neurons.append(folder_name)
     else:
         print(f"The directory {all_cells_folder} does not exist.")
-
-    neurons.sort()
-    num_groups = 4
-    # Which group to select: index from 0 to 3
-    idx = int(sys.argv[1])
-    job_nr = idx
-    
-    if idx == 0:
-        neur_slice = neurons[:130]
-    elif idx == 1:
-        neur_slice = neurons[130:260]
-    elif idx == 2:
-        neur_slice = neurons[260:390]
-    elif idx == 3:
-        neur_slice = neurons[390:520]
-    elif idx == 4:
-        neur_slice = neurons[520:650]
-    elif idx == 5:
-        neur_slice = neurons[650:780]
-    elif idx == 6:
-        neur_slice = neurons[780:910]
-    else:
-        neur_slice = neurons[910:]
 
     remove_list = ["Ca_HVA", "Ca_LVAst", "Ca", "CaDynamics_E2", 
                    "Ih", "Im", "K_Pst", "K_Tst", "KdShu2007", "Nap_Et2",
@@ -467,4 +442,30 @@ if __name__=='__main__':
     cdm_amp_dict = {}  # To store amplitude spectra for each cell
     imem_amp_dict = {}
 
-    run_white_noise_stim(freqs, neur_slice, tvec, t0_idx, job_nr)
+    # Simulation for the first neuron, full list of neurons computationally expencive, reccomend to split like shown below
+    run_white_noise_stim(freqs, neurons[:1], tvec, t0_idx)
+
+    ## To save time, reccomended to split jobs 
+    ## Here splitted into 8 different jobs 
+    # neurons.sort()
+    # idx = int(sys.argv[1])
+    # job_nr = idx
+    
+    # if idx == 0:
+    #     neur_slice = neurons[:130]
+    # elif idx == 1:
+    #     neur_slice = neurons[130:260]
+    # elif idx == 2:
+    #     neur_slice = neurons[260:390]
+    # elif idx == 3:
+    #     neur_slice = neurons[390:520]
+    # elif idx == 4:
+    #     neur_slice = neurons[520:650]
+    # elif idx == 5:
+    #     neur_slice = neurons[650:780]
+    # elif idx == 6:
+    #     neur_slice = neurons[780:910]
+    # else:
+    #     neur_slice = neurons[910:]
+
+    # run_white_noise_stim(freqs, neur_slice, tvec, t0_idx, job_nr)

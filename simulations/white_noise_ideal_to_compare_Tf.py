@@ -10,6 +10,7 @@ import scipy.fftpack as ff
 
 np.random.seed(1534)
 h = neuron.h
+ns.load_mechs_from_folder(ns.cell_models_folder)
 
 
 def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam_1=2, apic_dend_diam_2=2, apic_upper_len = 1000, apic_bottom_len = -200):
@@ -151,7 +152,7 @@ def run_white_noise_ideal(tstop,
                              tvec,
                              t0_idx,
                              multipole_data_filename='compare_wn_ideal_tf',
-                             directory='/Users/susannedahle/CellTypeDependenceElStim'
+                             directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'
                              ):
     
     multipole_data_filename = f'{multipole_data_filename}.npy'

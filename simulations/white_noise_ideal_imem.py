@@ -9,6 +9,7 @@ import brainsignals.neural_simulations as ns
 import scipy.fftpack as ff
 
 h = neuron.h
+ns.load_mechs_from_folder(ns.cell_models_folder)
 
 def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam=2, apic_upper_len = 1000, apic_bottom_len = -200):
 
@@ -143,7 +144,7 @@ def run_white_noise_imem(tstop,
                          soma_diam, dend_diam, upper_len, bottom_len,
                          tvec,
                          t0_idx,
-                         imem_data_filename='plot_imem_data',
+                         imem_data_filename='plot_imem_data_ideal',
                          directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'
                         ):
     

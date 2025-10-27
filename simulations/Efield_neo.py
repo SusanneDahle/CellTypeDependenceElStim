@@ -1,7 +1,7 @@
-# Simulation code all neocortical neuron models from Blue Brain Project
+# Simulation code all neocortical neuron models from The Blue Brain Project
 
 import os
-import sys
+# import sys # If job split
 from os.path import join
 
 from glob import glob
@@ -99,11 +99,12 @@ def run_passive_simulation_Ex(freq,
                               tstop, 
                               dt, 
                               cutoff,
-                              job_nr,
+                              # job_nr, if splitted jobs during sim
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/vmem_neo'):
+                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'):
 
-    amp_data_filename = f'vmem_amp_data_neo_Ex_{job_nr}.npy'
+    # amp_data_filename = f'vmem_amp_data_neo_Ex_{job_nr}.npy' # If splitted jobs
+    amp_data_filename = f'vmem_amp_data_neo_Ex.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
     
     # Initialize or load existing data
@@ -189,11 +190,12 @@ def run_passive_simulation_Ey(freq,
                               tstop, 
                               dt, 
                               cutoff,
-                              job_nr,
+                              # job_nr, if splitted jobs during sim
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/vmem_neo'):
+                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'):
 
-    amp_data_filename = f'vmem_amp_data_neo_Ey_{job_nr}.npy'
+    # amp_data_filename = f'vmem_amp_data_neo_Ey_{job_nr}.npy' # If splitted jobs
+    amp_data_filename = f'vmem_amp_data_neo_Ey.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
     
     # Initialize or load existing data
@@ -280,13 +282,15 @@ def run_passive_simulation_Ez(freq,
                               tstop, 
                               dt, 
                               cutoff,
-                              job_nr,
+                              # job_nr, if splitted jobs during sim
                               local_E_field=1,  # V/m
-                              directory='/mnt/SCRATCH/susandah/output/vmem_neo'):
+                              directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data'):
 
-    amp_data_filename = f'vmem_amp_data_neo_Ez_{job_nr}.npy'
+    # amp_data_filename = f'vmem_amp_data_neo_Ez_{job_nr}.npy' # If splitted jobs
+    amp_data_filename = f'vmem_amp_data_neo_Ez.npy'
     amp_data_file_path = os.path.join(directory, amp_data_filename)
-    plot_data_filename = f'plot_data_neo_{job_nr}.npy'
+    # plot_data_filename = f'plot_data_neo_{job_nr}.npy' # If splitted jobs
+    plot_data_filename = f'plot_data_neo.npy'
     plot_data_file_path = os.path.join(directory, plot_data_filename)
     
     # Initialize or load existing data
@@ -446,10 +450,10 @@ if __name__=='__main__':
 
     h = neuron.h
 
-    all_cells_folder = '/mnt/users/susandah/neuron_stimulation/all_cells_folder'
+    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder'
     bbp_folder = os.path.abspath(all_cells_folder)                              # Make this the bbp_folder
 
-    cell_models_folder = '/mnt/users/susandah/neuron_stimulation/brainsignals/cell_models'
+    cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models'
     bbp_mod_folder = join(cell_models_folder, "bbp_mod")                        # Mappen med ulike parametere og mekanismer 
 
     # List to store the neuron names
@@ -464,46 +468,7 @@ if __name__=='__main__':
                 neurons.append(folder_name)
     else:
         print(f"The directory {all_cells_folder} does not exist.")
-
-    # 16 different jobs to save time
-    neurons.sort()
-    idx = int(sys.argv[1])
-    job_nr = idx
     
-    if idx == 0:
-        neur_slice = neurons[:65]
-    elif idx == 1:
-        neur_slice = neurons[65:130]
-    elif idx == 2:
-        neur_slice = neurons[130:195]
-    elif idx == 3:
-        neur_slice = neurons[195:260]
-    elif idx == 4:
-        neur_slice = neurons[260:325]
-    elif idx == 5:
-        neur_slice = neurons[325:390]
-    elif idx == 6:
-        neur_slice = neurons[390:455]
-    elif idx == 7:
-        neur_slice = neurons[455:520]
-    elif idx == 8:
-        neur_slice = neurons[520:585]
-    elif idx == 9:
-        neur_slice = neurons[585:650]
-    elif idx == 10:
-        neur_slice = neurons[650:715]
-    elif idx == 11:
-        neur_slice = neurons[715:780]
-    elif idx == 12:
-        neur_slice = neurons[780:845]
-    elif idx == 13:
-        neur_slice = neurons[845:910]
-    elif idx == 14:
-        neur_slice = neurons[910:975]
-    else:
-        neur_slice = neurons[975:]
-    
-
     remove_list = ["Ca_HVA", "Ca_LVAst", "Ca", "CaDynamics_E2", 
                    "Ih", "Im", "K_Pst", "K_Tst", "KdShu2007", "Nap_Et2",
                    "NaTa_t", "NaTs2_t", "SK_E2", "SKv3_1", "StochKv"]
@@ -519,9 +484,53 @@ if __name__=='__main__':
     freq3 = np.arange(100, 2200, 100) # Longer steplength to save calculation time
     freq = sorted(np.concatenate((freq1, freq2, freq3)))
 
-    run_passive_simulation_Ez(freq, neur_slice, remove_list, tstop, dt, cutoff, job_nr)
+    # Simulation for the first neuron, full list of neurons computationally expencive, reccomend to split like shown below
+    run_passive_simulation_Ez(freq, neurons[:1], remove_list, tstop, dt, cutoff)
+    run_passive_simulation_Ex(freq, neurons[:1], remove_list, tstop, dt, cutoff)
+    run_passive_simulation_Ey(freq, neurons[:1], remove_list, tstop, dt, cutoff)
 
-    run_passive_simulation_Ex(freq, neur_slice, remove_list, tstop, dt, cutoff, job_nr)
+    ## To save time, reccomended to split jobs 
+    ## Here splitted into 16 different jobs 
+    # neurons.sort()
+    # idx = int(sys.argv[1])
+    # job_nr = idx
+    
+    # if idx == 0:
+    #     neur_slice = neurons[:65]
+    # elif idx == 1:
+    #     neur_slice = neurons[65:130]
+    # elif idx == 2:
+    #     neur_slice = neurons[130:195]
+    # elif idx == 3:
+    #     neur_slice = neurons[195:260]
+    # elif idx == 4:
+    #     neur_slice = neurons[260:325]
+    # elif idx == 5:
+    #     neur_slice = neurons[325:390]
+    # elif idx == 6:
+    #     neur_slice = neurons[390:455]
+    # elif idx == 7:
+    #     neur_slice = neurons[455:520]
+    # elif idx == 8:
+    #     neur_slice = neurons[520:585]
+    # elif idx == 9:
+    #     neur_slice = neurons[585:650]
+    # elif idx == 10:
+    #     neur_slice = neurons[650:715]
+    # elif idx == 11:
+    #     neur_slice = neurons[715:780]
+    # elif idx == 12:
+    #     neur_slice = neurons[780:845]
+    # elif idx == 13:
+    #     neur_slice = neurons[845:910]
+    # elif idx == 14:
+    #     neur_slice = neurons[910:975]
+    # else:
+    #     neur_slice = neurons[975:]
 
-    run_passive_simulation_Ey(freq, neur_slice, remove_list, tstop, dt, cutoff, job_nr)
+    # run_passive_simulation_Ez(freq, neur_slice, remove_list, tstop, dt, cutoff, job_nr)
+
+    # run_passive_simulation_Ex(freq, neur_slice, remove_list, tstop, dt, cutoff, job_nr)
+
+    # run_passive_simulation_Ey(freq, neur_slice, remove_list, tstop, dt, cutoff, job_nr)
 
