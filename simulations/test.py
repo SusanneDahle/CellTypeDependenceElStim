@@ -10,7 +10,7 @@ import scipy.fftpack as ff
 np.random.seed(1534)
 h = neuron.h
 
-import brainsignals.neural_simulations as ns
+from scipy.signal import welch
 
 
 def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam_1=2, apic_dend_diam_2=2, apic_upper_len = 1000, apic_bottom_len = -200):
@@ -133,6 +133,26 @@ def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005):
     noise_vec.play(syn._ref_amp, cell.dt)
     return cell, syn, noise_vec 
 
+def return_freq_and_amplitude(tvec, sig): #From Halnes Et al.2024
+    """ Returns the amplitude and frequency of the input signal"""
+    import scipy.fftpack as ff
+    sig = np.array(sig)
+    if len(sig.shape) == 1:
+        sig = np.array([sig])
+    elif len(sig.shape) == 2:
+        pass
+    else:
+        raise RuntimeError("Not compatible with given array shape!")
+    timestep = (tvec[1] - tvec[0])/1000. if type(tvec) in [list, np.ndarray] else tvec
+    sample_freq = ff.fftfreq(sig.shape[1], d=timestep)
+    pidxs = np.where(sample_freq >= 0)
+    freqs = sample_freq[pidxs]
+
+    Y = ff.fft(sig, axis=1)[:, pidxs[0]]
+
+    amplitude = np.abs(Y)/Y.shape[1]
+    return freqs, amplitude
+
 def check_existing_data(multipole_data, cell_name):
     if cell_name in multipole_data:
         if cell_name in multipole_data.keys():
@@ -140,9 +160,7 @@ def check_existing_data(multipole_data, cell_name):
     return False  
 
 
-from scipy.signal import welch
-import numpy as np
-import os
+
 
 def run_white_noise_ideal(tstop,
                              dt,
