@@ -6,7 +6,6 @@ import numpy as np
 import neuron
 import LFPy
 import brainsignals.neural_simulations as ns
-
 import scipy.fftpack as ff
 
 np.random.seed(1534)
