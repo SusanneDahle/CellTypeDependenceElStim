@@ -5,11 +5,12 @@ import numpy as np
 
 import neuron
 import LFPy
-import brainsignals.neural_simulations as ns
 import scipy.fftpack as ff
 
 np.random.seed(1534)
 h = neuron.h
+
+import brainsignals.neural_simulations as ns
 
 
 def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam_1=2, apic_dend_diam_2=2, apic_upper_len = 1000, apic_bottom_len = -200):
