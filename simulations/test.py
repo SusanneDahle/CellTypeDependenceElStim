@@ -160,8 +160,6 @@ def check_existing_data(multipole_data, cell_name):
     return False  
 
 
-
-
 def run_white_noise_ideal(tstop,
                              dt,
                              freqs,
@@ -231,7 +229,7 @@ def run_white_noise_ideal(tstop,
                         cdm = cdm[2, :]
 
                         # Get amplitude spectra
-                        freqs_s, amp_cdm_s = ns.return_freq_and_amplitude(cell.tvec, cdm)
+                        freqs_s, amp_cdm_s = return_freq_and_amplitude(cell.tvec, cdm)
 
                         amp_cdm = amp_cdm_s[0, :]
 
@@ -242,7 +240,7 @@ def run_white_noise_ideal(tstop,
                         input_current = np.array(noise_vec)
                         input_current = input_current[t0_idx:len(cdm)+t0_idx]
 
-                        _, amp_input_current = ns.return_freq_and_amplitude(cell.tvec, input_current)
+                        _, amp_input_current = return_freq_and_amplitude(cell.tvec, input_current)
                         cdm_per_input_current = amp_cdm / amp_input_current
 
 
