@@ -5,12 +5,13 @@ import numpy as np
 import os
 from os.path import join
 from glob import glob
-import brainsignals.neural_simulations as ns
+import brainsignals.neural_simulations as ns # From ElectricBrainSignals (Hagen and Ness 2023), see README
 import scipy.fftpack as ff
 
 h = neuron.h
 ns.load_mechs_from_folder(ns.cell_models_folder)
 
+# Cell function adapted from ElectricBrainSignals (Hagen and Ness 2023), see README
 def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam=2, apic_upper_len = 1000, apic_bottom_len = -200):
 
     h("forall delete_section()")
@@ -87,26 +88,13 @@ def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam=2, apic_upp
     return cell
 
 
-def get_dipole_transformation_matrix(cell):
-    '''
-    Get linear response matrix
-
-    Returns
-    -------
-    response_matrix: ndarray
-        shape (3, n_seg) ndarray
-
-    Raises
-    ------
-    AttributeError
-        if ``cell is None``
-    '''
+def get_dipole_transformation_matrix(cell): # From LFPy
     return np.stack([cell.x.mean(axis=-1),
                         cell.y.mean(axis=-1),
                         cell.z.mean(axis=-1)])
 
 
-def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005):
+def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): # Function from ElectricBrainSignals (Hagen and Ness 2023), see README
 
     I = np.zeros(len(tvec))
 
