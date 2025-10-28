@@ -15,7 +15,7 @@ ns.load_mechs_from_folder(ns.cell_models_folder)
 np.random.seed(1534)
 
 
-def return_BBP_neuron(cell_name, tstop, dt):
+def return_BBP_neuron(cell_name, tstop, dt): # Function from ElectricBrainSignals (Hagen and Ness 2023), see README
 
     # load some required neuron-interface files
     neuron.h.load_file("stdrun.hoc")
@@ -87,13 +87,13 @@ def return_BBP_neuron(cell_name, tstop, dt):
     return cell
 
 
-def get_dipole_transformation_matrix(cell): # From LFPy
+def get_dipole_transformation_matrix(cell): # Function from LFPy
         return np.stack([cell.x.mean(axis=-1),
                          cell.y.mean(axis=-1),
                          cell.z.mean(axis=-1)])
 
 
-def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): # From Hagen and Ness, ElectricBrainSignals doi: "https://doi.org/10.5281/zenodo.8255422"
+def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): # Function from ElectricBrainSignals (Hagen and Ness 2023), see README
 
     I = np.zeros(len(tvec))
 
@@ -357,11 +357,11 @@ if __name__=='__main__':
 
     h = neuron.h
 
-    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder' # From the Blue Brain Project (Markram et al. 2015)
-    bbp_folder = os.path.abspath(all_cells_folder)                              # Make this the bbp_folder
+    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder' # From the Blue Brain Project (Markram et al. 2015), see README
+    bbp_folder = os.path.abspath(all_cells_folder)                           
 
-    cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models'
-    bbp_mod_folder = join(cell_models_folder, "bbp_mod")                        # Mappen med ulike parametere og mekanismer 
+    cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models' # From ElectricBrainSignals (Hagen and Ness 2023), see README
+    bbp_mod_folder = join(cell_models_folder, "bbp_mod")                   
 
     # List to store the neuron names
     neurons = []
