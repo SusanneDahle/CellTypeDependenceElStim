@@ -7,7 +7,7 @@ import numpy as np
 
 import neuron
 import LFPy
-import brainsignals.neural_simulations as ns # From Hagen and Ness, ElectricBrainSignals doi: "https://doi.org/10.5281/zenodo.8255422"
+import brainsignals.neural_simulations as ns #From ElectricBrainSignals (Hagen and Ness 2023), see README
 
 import scipy.fftpack as ff
 
@@ -15,7 +15,7 @@ ns.load_mechs_from_folder(ns.cell_models_folder)
 np.random.seed(1534)
 
 
-def return_BBP_neuron(cell_name, tstop, dt): # Function from ElectricBrainSignals (Hagen and Ness 2023), see README
+def return_BBP_neuron(cell_name, tstop, dt): #Cell function adapted from ElectricBrainSignals (Hagen and Ness 2023), see README
 
     # load some required neuron-interface files
     neuron.h.load_file("stdrun.hoc")
@@ -87,7 +87,7 @@ def return_BBP_neuron(cell_name, tstop, dt): # Function from ElectricBrainSignal
     return cell
 
 
-def get_dipole_transformation_matrix(cell): # Function from LFPy
+def get_dipole_transformation_matrix(cell): #From LFPy v.2.3.5
         return np.stack([cell.x.mean(axis=-1),
                          cell.y.mean(axis=-1),
                          cell.z.mean(axis=-1)])

@@ -14,7 +14,7 @@ not_working_plot_cells = []
 
 # ns.compile_bbp_mechanisms(neurons[0]) # Compile once, before running jobs
 
-def return_BBP_neuron(cell_name, tstop, dt): # Function from ElectricBrainSignals (Hagen and Ness 2023), see README
+def return_BBP_neuron(cell_name, tstop, dt): #Cell function adapted from ElectricBrainSignals (Hagen and Ness 2023), see README
 
     # load some required neuron-interface files
     neuron.h.load_file("stdrun.hoc")

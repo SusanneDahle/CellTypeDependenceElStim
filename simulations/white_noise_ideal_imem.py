@@ -88,7 +88,7 @@ def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam=2, apic_upp
     return cell
 
 
-def get_dipole_transformation_matrix(cell): # From LFPy
+def get_dipole_transformation_matrix(cell): #From LFPy v.2.3.5
     return np.stack([cell.x.mean(axis=-1),
                         cell.y.mean(axis=-1),
                         cell.z.mean(axis=-1)])
