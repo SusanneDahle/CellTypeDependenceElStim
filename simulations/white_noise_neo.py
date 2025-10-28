@@ -87,27 +87,13 @@ def return_BBP_neuron(cell_name, tstop, dt):
     return cell
 
 
-def get_dipole_transformation_matrix(cell):
-        '''
-        Get linear response matrix
-
-        Returns
-        -------
-        response_matrix: ndarray
-            shape (3, n_seg) ndarray
-
-        Raises
-        ------
-        AttributeError
-            if ``cell is None``
-        '''
+def get_dipole_transformation_matrix(cell): # From LFPy
         return np.stack([cell.x.mean(axis=-1),
                          cell.y.mean(axis=-1),
                          cell.z.mean(axis=-1)])
 
 
-
-def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): 
+def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): # From Hagen and Ness, ElectricBrainSignals doi: "https://doi.org/10.5281/zenodo.8255422"
 
     I = np.zeros(len(tvec))
 
