@@ -87,8 +87,6 @@ def return_BBP_neuron(cell_name, tstop, dt):
     return cell
 
 
-# M matrices for dipole, quadrupole and octopole 
-
 def get_dipole_transformation_matrix(cell):
         '''
         Get linear response matrix
@@ -107,38 +105,9 @@ def get_dipole_transformation_matrix(cell):
                          cell.y.mean(axis=-1),
                          cell.z.mean(axis=-1)])
 
-def get_quadrupole_transformation_matrix(cell):
-    '''
-    Get quadrupole "transformation matrix" for computing diagonal quadrupole components.
-
-    Returns
-    -------
-    response_matrix: ndarray
-        shape (3, n_seg) ndarray with [x², y², z²] per segment
-    '''
-    return np.stack([
-        cell.x.mean(axis=-1) ** 2,
-        cell.y.mean(axis=-1) ** 2,
-        cell.z.mean(axis=-1) ** 2
-    ])
-
-def get_octopole_transformation_matrix(cell):
-    '''
-    Get quadrupole "transformation matrix" for computing diagonal quadrupole components.
-
-    Returns
-    -------
-    response_matrix: ndarray
-        shape (3, n_seg) ndarray with [x², y², z²] per segment
-    '''
-    return np.stack([
-        cell.x.mean(axis=-1) ** 3,
-        cell.y.mean(axis=-1) ** 3,
-        cell.z.mean(axis=-1) ** 3
-    ])
 
 
-def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005):
+def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): 
 
     I = np.zeros(len(tvec))
 
