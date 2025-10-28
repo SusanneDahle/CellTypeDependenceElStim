@@ -7,7 +7,7 @@ import numpy as np
 
 import neuron
 import LFPy
-import brainsignals.neural_simulations as ns
+import brainsignals.neural_simulations as ns # From Hagen and Ness, ElectricBrainSignals doi: "https://doi.org/10.5281/zenodo.8255422"
 
 import scipy.fftpack as ff
 
@@ -357,7 +357,7 @@ if __name__=='__main__':
 
     h = neuron.h
 
-    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder'
+    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder' # From the Blue Brain Project (Markram et al. 2015)
     bbp_folder = os.path.abspath(all_cells_folder)                              # Make this the bbp_folder
 
     cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models'

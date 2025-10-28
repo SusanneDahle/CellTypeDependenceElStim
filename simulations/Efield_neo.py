@@ -1,5 +1,3 @@
-# Simulation code all neocortical neuron models from The Blue Brain Project
-
 import os
 # import sys # If job split
 from os.path import join
@@ -9,14 +7,14 @@ import numpy as np
 
 import neuron
 import LFPy
-import brainsignals.neural_simulations as ns
+import brainsignals.neural_simulations as ns # From ElectricBrainSignals (Hagen and Ness 2023), see README
 
 not_working_cells = []
 not_working_plot_cells = []
 
-# ns.compile_bbp_mechanisms(neurons[0]) # Compile once, before running jobs in paralell
+# ns.compile_bbp_mechanisms(neurons[0]) # Compile once, before running jobs
 
-def return_BBP_neuron(cell_name, tstop, dt):
+def return_BBP_neuron(cell_name, tstop, dt): # From ElectricBrainSignals (Hagen and Ness 2023), see README
 
     # load some required neuron-interface files
     neuron.h.load_file("stdrun.hoc")
@@ -450,11 +448,11 @@ if __name__=='__main__':
 
     h = neuron.h
 
-    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder'
-    bbp_folder = os.path.abspath(all_cells_folder)                              # Make this the bbp_folder
+    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder' # From the Blue Brain Project (Markram et al. 2015), see README
+    bbp_folder = os.path.abspath(all_cells_folder)               
 
-    cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models'
-    bbp_mod_folder = join(cell_models_folder, "bbp_mod")                        # Mappen med ulike parametere og mekanismer 
+    cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models' # From ElectricBrainSignals (Hagen and Ness 2023), see README
+    bbp_mod_folder = join(cell_models_folder, "bbp_mod")                       
 
     # List to store the neuron names
     neurons = []
