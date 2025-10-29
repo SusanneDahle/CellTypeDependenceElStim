@@ -125,11 +125,6 @@ def check_existing_data(multipole_data, cell_name):
             return True
     return False  
 
-
-from scipy.signal import welch
-import numpy as np
-import os
-
 def run_white_noise_ideal(tstop,
                              dt,
                              freqs,
@@ -214,14 +209,6 @@ def run_white_noise_ideal(tstop,
                         cdm_per_input_current = amp_cdm / amp_input_current
 
 
-                        # Input and output PSDs using Welch
-                        freqs_psd, psd_input = welch(input_current, fs=fs, nperseg=nperseg)
-                        _, psd_cdm = welch(cdm, fs=fs, nperseg=nperseg)
-
-                        # Transfer function PSD: |H(f)|^2 = PSD_output / PSD_input
-                        tf_psd_cdm = psd_cdm / psd_input #µm^2
-
-
                         # Compute geometry-based metrics
                         closest_z_endpoint = min(abs(bot_l), abs(up_l))
                         distant_z_endpoint = max(abs(bot_l), abs(up_l))
@@ -232,9 +219,6 @@ def run_white_noise_ideal(tstop,
                         multipole_data[cell_name] = {
                             'cdm_freqs': freqs_s,
                             'cdm': amp_cdm,
-                            'psd_freqs': freqs_psd,
-                            'psd_cdm': psd_cdm,
-                            'magnitude_transfer_psd_cdm': tf_psd_cdm,
                             'closest_z_endpoint': closest_z_endpoint,
                             'distant_z_endpoint': distant_z_endpoint,
                             'total_len': total_len,
