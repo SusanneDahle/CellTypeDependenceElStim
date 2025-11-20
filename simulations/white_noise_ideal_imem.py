@@ -207,12 +207,6 @@ def run_white_noise_imem(tstop,
                     cell.imem = cell.imem[:, t0_idx:]
                     cell.tvec = cell.tvec[t0_idx:] - cell.tvec[t0_idx]
 
-                    # Compute geometry-based metrics
-                    closest_z_endpoint = min(abs(bot_l), abs(up_l))
-                    distant_z_endpoint = max(abs(bot_l), abs(up_l))
-                    total_len = abs(bot_l) + abs(up_l)
-                    symmetry_factor = closest_z_endpoint / distant_z_endpoint
-
                     # Store imem amplitudes at 10, 100, 1000 Hz
                     imem_amplitudes_at_freqs = []
                     segment_phases_at_freqs = []
@@ -281,12 +275,6 @@ def run_white_noise_imem(tstop,
                         'tvec': cell.tvec.tolist(),
                         'imem_amps': imem_amplitudes_at_freqs, 
                         'imem_phases': imem_amplitudes_at_freqs,
-                        'closest_z_endpoint': closest_z_endpoint,
-                        'distant_z_endpoint': distant_z_endpoint,
-                        'total_len': total_len,
-                        'symmetry_factor': symmetry_factor,
-                        'soma_diam': s_d,
-                        'tot_dend_diam': 2 * d_d,
                         'positive_avg_imem_pos': positive_avg_imem_pos, # Added
                         'negative_avg_imem_pos': negative_avg_imem_pos
                     }
