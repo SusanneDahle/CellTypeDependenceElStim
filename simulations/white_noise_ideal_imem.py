@@ -125,6 +125,27 @@ def check_existing_data(multipole_data, cell_name):
             return True
     return False  
 
+def return_freq_amp_phase(tvec, sig):
+    """ Returns the amplitude and frequency of the input signal"""
+    import scipy.fftpack as ff
+    sig = np.array(sig)
+    if len(sig.shape) == 1:
+        sig = np.array([sig])
+    elif len(sig.shape) == 2:
+        pass
+    else:
+        raise RuntimeError("Not compatible with given array shape!")
+    timestep = (tvec[1] - tvec[0])/1000. if type(tvec) in [list, np.ndarray] else tvec
+    sample_freq = ff.fftfreq(sig.shape[1], d=timestep)
+    pidxs = np.where(sample_freq >= 0)
+    freqs = sample_freq[pidxs]
+
+    Y = ff.fft(sig, axis=1)[:, pidxs[0]]
+
+    amplitude = np.abs(Y)/Y.shape[1]
+    phase = np.angle(Y)
+    return freqs, amplitude, phase
+
 def run_white_noise_imem(tstop,
                          dt,
                          freqs,
@@ -194,20 +215,25 @@ def run_white_noise_imem(tstop,
 
                     # Store imem amplitudes at 10, 100, 1000 Hz
                     imem_amplitudes_at_freqs = []
+                    segment_phases_at_freqs = []
                     target_freqs = [5,10,50,100,500,1000]
 
                     for idx in range(cell.totnsegs):
                         imem_seg = cell.imem[idx, :]
-                        freqs_imem, imem_amps = ns.return_freq_and_amplitude(cell.tvec, imem_seg)
+                        freqs_imem, imem_amps, imem_phases = return_freq_amp_phase(cell.tvec, imem_seg)
 
                         # Extract amplitudes for the target frequencies
                         segment_amplitudes = []
+                        segment_phases = []
                         for f in target_freqs:
                             freq_idx = np.argmin(np.abs(freqs_imem - f))
                             amplitude = imem_amps[0, freq_idx]
+                            phase = imem_phases[0, freq_idx]
                             segment_amplitudes.append(amplitude)
+                            segment_phases.append(phase)
 
                         imem_amplitudes_at_freqs.append(segment_amplitudes)
+                        segment_phases_at_freqs.append(segment_phases)
                     
                     # Calculate average return current positions for each target frequency
                     positive_avg_imem_pos = []
@@ -254,6 +280,7 @@ def run_white_noise_imem(tstop,
                         'totnsegs': cell.totnsegs,
                         'tvec': cell.tvec.tolist(),
                         'imem_amps': imem_amplitudes_at_freqs, 
+                        'imem_phases': imem_amplitudes_at_freqs,
                         'closest_z_endpoint': closest_z_endpoint,
                         'distant_z_endpoint': distant_z_endpoint,
                         'total_len': total_len,
