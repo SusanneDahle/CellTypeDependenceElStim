@@ -287,8 +287,6 @@ def run_white_noise_imem(tstop,
 
                     print(f"Simulation complete for neuron {cell_name}: nr.{i}")
 
-    print('All simulations complete')
-
 
 
 if __name__=='__main__':
