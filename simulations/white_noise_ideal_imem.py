@@ -209,7 +209,7 @@ def run_white_noise_imem(tstop,
 
                     # Store imem amplitudes at 10, 100, 1000 Hz
                     imem_amplitudes_at_freqs = []
-                    segment_phases_at_freqs = []
+                    imem_phases_at_freqs = []
                     target_freqs = [5,10,50,100,500,1000]
 
                     for idx in range(cell.totnsegs):
@@ -227,7 +227,7 @@ def run_white_noise_imem(tstop,
                             segment_phases.append(phase)
 
                         imem_amplitudes_at_freqs.append(segment_amplitudes)
-                        segment_phases_at_freqs.append(segment_phases)
+                        imem_phases_at_freqs.append(segment_phases)
                     
                     # Calculate average return current positions for each target frequency
                     positive_avg_imem_pos = []
@@ -274,7 +274,7 @@ def run_white_noise_imem(tstop,
                         'totnsegs': cell.totnsegs,
                         'tvec': cell.tvec.tolist(),
                         'imem_amps': imem_amplitudes_at_freqs, 
-                        'imem_phases': imem_amplitudes_at_freqs,
+                        'imem_phases': imem_phases_at_freqs,
                         'positive_avg_imem_pos': positive_avg_imem_pos, # Added
                         'negative_avg_imem_pos': negative_avg_imem_pos
                     }
