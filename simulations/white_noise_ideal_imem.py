@@ -88,10 +88,38 @@ def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam=2, apic_upp
     return cell
 
 
-def get_dipole_transformation_matrix(cell): #From LFPy v.2.3.5
-    return np.stack([cell.x.mean(axis=-1),
-                        cell.y.mean(axis=-1),
-                        cell.z.mean(axis=-1)])
+def get_positive_dipole_transformation_matrix(cell): # Based on get_dipole_transformation_matrix() from LFPy v.2.3.5
+    # Compute mean z-position per segment
+    z_mean = cell.z.mean(axis=-1)
+
+    # Get indices where z > 0
+    pos_indices = np.where(z_mean > 0)[0]
+
+    # Stack only the positive-z segments
+    response_matrix = np.stack([
+        cell.x.mean(axis=-1)[pos_indices],
+        cell.y.mean(axis=-1)[pos_indices],
+        cell.z.mean(axis=-1)[pos_indices]
+    ])
+
+    return response_matrix, pos_indices
+
+
+def get_negative_dipole_transformation_matrix(cell): # Based on get_dipole_transformation_matrix() from LFPy v.2.3.5
+    # Compute mean z-position per segment
+    z_mean = cell.z.mean(axis=-1)
+
+    # Get indices where z > 0
+    neg_indices = np.where(z_mean < 0)[0]
+
+    # Stack only the positive-z segments
+    response_matrix = np.stack([
+        cell.x.mean(axis=-1)[neg_indices],
+        cell.y.mean(axis=-1)[neg_indices],
+        cell.z.mean(axis=-1)[neg_indices]
+    ])
+
+    return response_matrix, neg_indices
 
 
 def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): #From ElectricBrainSignals (Hagen and Ness 2023), see README
@@ -207,11 +235,39 @@ def run_white_noise_imem(tstop,
                     cell.imem = cell.imem[:, t0_idx:]
                     cell.tvec = cell.tvec[t0_idx:] - cell.tvec[t0_idx]
 
-                    # Store imem amplitudes at 10, 100, 1000 Hz
-                    imem_amplitudes_at_freqs = []
-                    imem_phases_at_freqs = []
+                    # Store data for targer frequencies 
                     target_freqs = [5,10,50,100,500,1000]
 
+                    # Store p_z amplitudes 
+                    Tm_pos, pos_idx = get_positive_dipole_transformation_matrix(cell)
+                    cdm_pos = Tm_pos @ cell.imem[pos_idx, :]
+                    cdm_pos = cdm_pos[2, :]
+                    freqs_cdm_pos, amp_cdm_pos, phase_cdm_pos = return_freq_amp_phase(cell.tvec, cdm_pos)
+                    cdm_pos_amps = []
+                    cdm_pos_phases = []
+                    for f in target_freqs:
+                        freq_idx = np.argmin(np.abs(freqs_cdm_pos - f))
+                        amplitude = amp_cdm_pos[0, freq_idx]
+                        phase = phase_cdm_pos[0, freq_idx]
+                        cdm_pos_amps.append(amplitude)
+                        cdm_pos_phases.append(phase)
+                    
+                    Tm_neg, neg_idx = get_negative_dipole_transformation_matrix(cell)
+                    cdm_neg = Tm_neg @ cell.imem[neg_idx, :]
+                    cdm_neg = cdm_neg[2, :]
+                    freqs_cdm_neg, amp_cdm_neg, phase_cdm_neg = return_freq_amp_phase(cell.tvec, cdm_neg)
+                    cdm_neg_amps = []
+                    cdm_neg_phases = []
+                    for f in target_freqs:
+                        freq_idx = np.argmin(np.abs(freqs_cdm_neg - f))
+                        amplitude = amp_cdm_neg[0, freq_idx]
+                        phase = phase_cdm_neg[0, freq_idx]
+                        cdm_neg_amps.append(amplitude)
+                        cdm_neg_phases.append(phase)
+
+                    # Store imem amplitudes
+                    imem_amplitudes_at_freqs = []
+                    imem_phases_at_freqs = []
                     for idx in range(cell.totnsegs):
                         imem_seg = cell.imem[idx, :]
                         freqs_imem, imem_amps, imem_phases = return_freq_amp_phase(cell.tvec, imem_seg)
@@ -276,7 +332,11 @@ def run_white_noise_imem(tstop,
                         'imem_amps': imem_amplitudes_at_freqs, 
                         'imem_phases': imem_phases_at_freqs,
                         'positive_avg_imem_pos': positive_avg_imem_pos, # Added
-                        'negative_avg_imem_pos': negative_avg_imem_pos
+                        'negative_avg_imem_pos': negative_avg_imem_pos,
+                        'cdm_pos': cdm_pos_amps,
+                        'cdm_pos_phases': cdm_pos_phases,
+                        'cdm_neg': cdm_neg_amps,
+                        'cdm_neg_phases': cdm_neg_phases,
                     }
 
                     # Save to file
