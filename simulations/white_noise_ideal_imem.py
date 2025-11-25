@@ -87,8 +87,13 @@ def return_ideal_cell(tstop, dt, apic_soma_diam = 20, apic_dend_diam=2, apic_upp
     # cell.set_pos(x=-cell.xstart[0])
     return cell
 
+def get_dipole_transformation_matrix(cell): #From LFPy v.2.3.5
+        return np.stack([cell.x.mean(axis=-1),
+                         cell.y.mean(axis=-1),
+                         cell.z.mean(axis=-1)])
 
-def get_positive_dipole_transformation_matrix(cell): # Based on get_dipole_transformation_matrix() from LFPy v.2.3.5
+
+def get_positive_dipole_transformation_matrix(cell): 
     # Compute mean z-position per segment
     z_mean = cell.z.mean(axis=-1)
 
@@ -105,7 +110,7 @@ def get_positive_dipole_transformation_matrix(cell): # Based on get_dipole_trans
     return response_matrix, pos_indices
 
 
-def get_negative_dipole_transformation_matrix(cell): # Based on get_dipole_transformation_matrix() from LFPy v.2.3.5
+def get_negative_dipole_transformation_matrix(cell): 
     # Compute mean z-position per segment
     z_mean = cell.z.mean(axis=-1)
 
@@ -238,6 +243,31 @@ def run_white_noise_imem(tstop,
                     # Store data for targer frequencies 
                     target_freqs = [5,10,50,100,500,1000]
 
+                    input_current = np.array(noise_vec)
+                    input_current = input_current[t0_idx:len(cdm)+t0_idx]
+                    freqs_input, amps_input_current, phases_input_current = return_freq_amp_phase(cell.tvec, input_current)
+                    input_amps = []
+                    input_phases = []
+                    for f in target_freqs:
+                        freq_idx = np.argmin(np.abs(freqs_input - f))
+                        amplitude = amps_input_current[0, freq_idx]
+                        phase = phases_input_current[0, freq_idx]
+                        input_amps.append(amplitude)
+                        input_phases.append(phase)
+
+
+                    cdm = get_dipole_transformation_matrix(cell) @ cell.imem
+                    cdm = cdm[2, :] # 2: z-cordinate, : all timestep
+                    freqs_cdm, amp_cdm, phase_cdm = return_freq_amp_phase(cell.tvec, cdm)
+                    cdm_amps = []
+                    cdm_phases = []
+                    for f in target_freqs:
+                        freq_idx = np.argmin(np.abs(freqs_cdm - f))
+                        amplitude = amp_cdm[0, freq_idx]
+                        phase = phase_cdm[0, freq_idx]
+                        cdm_amps.append(amplitude)
+                        cdm_phases.append(phase)
+
                     # Store p_z amplitudes 
                     Tm_pos, pos_idx = get_positive_dipole_transformation_matrix(cell)
                     cdm_pos = Tm_pos @ cell.imem[pos_idx, :]
@@ -331,8 +361,12 @@ def run_white_noise_imem(tstop,
                         'tvec': cell.tvec.tolist(),
                         'imem_amps': imem_amplitudes_at_freqs, 
                         'imem_phases': imem_phases_at_freqs,
-                        'positive_avg_imem_pos': positive_avg_imem_pos, # Added
+                        'positive_avg_imem_pos': positive_avg_imem_pos, 
                         'negative_avg_imem_pos': negative_avg_imem_pos,
+                        'input_amps': input_amps,
+                        'input_phases': input_phases,
+                        'cdm': cdm_amps,
+                        'cdm_phases': cdm_phases,
                         'cdm_pos': cdm_pos_amps,
                         'cdm_pos_phases': cdm_pos_phases,
                         'cdm_neg': cdm_neg_amps,
