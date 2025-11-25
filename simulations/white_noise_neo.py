@@ -1,5 +1,5 @@
 import os
-# import sys # If job split
+import sys # If split jobs
 from os.path import join
 
 from glob import glob
@@ -15,7 +15,8 @@ ns.load_mechs_from_folder(ns.cell_models_folder)
 np.random.seed(1534)
 
 
-def return_BBP_neuron(cell_name, tstop, dt): #Adapted from ElectricBrainSignals (Hagen and Ness 2023), see README
+
+def return_BBP_neuron(cell_name, tstop, dt):
 
     # load some required neuron-interface files
     neuron.h.load_file("stdrun.hoc")
@@ -87,13 +88,62 @@ def return_BBP_neuron(cell_name, tstop, dt): #Adapted from ElectricBrainSignals 
     return cell
 
 
-def get_dipole_transformation_matrix(cell): #From LFPy v.2.3.5
+# M matrices for dipole, quadrupole and octopole 
+
+def get_dipole_transformation_matrix(cell):     #From LFPy v.2.3.5
+        '''
+        Get linear response matrix
+
+        Returns
+        -------
+        response_matrix: ndarray
+            shape (3, n_seg) ndarray
+
+        Raises
+        ------
+        AttributeError
+            if ``cell is None``
+        '''
         return np.stack([cell.x.mean(axis=-1),
                          cell.y.mean(axis=-1),
                          cell.z.mean(axis=-1)])
 
+def get_positive_dipole_transformation_matrix(cell):
+    # Compute mean z-position per segment
+    z_mean = cell.z.mean(axis=-1)
 
-def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005): #From ElectricBrainSignals (Hagen and Ness 2023), see README
+    # Get indices where z > 0
+    pos_indices = np.where(z_mean > 0)[0]
+
+    # Stack only the positive-z segments
+    response_matrix = np.stack([
+        cell.x.mean(axis=-1)[pos_indices],
+        cell.y.mean(axis=-1)[pos_indices],
+        cell.z.mean(axis=-1)[pos_indices]
+    ])
+
+    return response_matrix, pos_indices
+
+
+def get_negative_dipole_transformation_matrix(cell):
+    # Compute mean z-position per segment
+    z_mean = cell.z.mean(axis=-1)
+
+    # Get indices where z > 0
+    neg_indices = np.where(z_mean < 0)[0]
+
+    # Stack only the positive-z segments
+    response_matrix = np.stack([
+        cell.x.mean(axis=-1)[neg_indices],
+        cell.y.mean(axis=-1)[neg_indices],
+        cell.z.mean(axis=-1)[neg_indices]
+    ])
+
+    return response_matrix, neg_indices
+
+
+
+def make_white_noise_stimuli(cell, input_idx, freqs, tvec, input_scaling=0.005):    #From ElectricBrainSignals (Hagen and Ness 2023), see README
 
     I = np.zeros(len(tvec))
 
@@ -127,37 +177,63 @@ def check_existing_data(cdm_data, cell_name):
 def find_closest_indices(target_freqs, available_freqs):
     return [np.argmin(np.abs(available_freqs - tf)) for tf in target_freqs]
 
+def return_freq_amp_phase(tvec, sig):
+    """ Returns the amplitude, frequency and phase of the signal"""
+    import scipy.fftpack as ff
+    sig = np.array(sig)
+    if len(sig.shape) == 1:
+        sig = np.array([sig])
+    elif len(sig.shape) == 2:
+        pass
+    else:
+        raise RuntimeError("Not compatible with given array shape!")
+    timestep = (tvec[1] - tvec[0])/1000. if type(tvec) in [list, np.ndarray] else tvec
+    sample_freq = ff.fftfreq(sig.shape[1], d=timestep)
+    pidxs = np.where(sample_freq >= 0)
+    freqs = sample_freq[pidxs]
+
+    Y = ff.fft(sig, axis=1)[:, pidxs[0]]
+
+    amplitude = np.abs(Y)/Y.shape[1]
+    phase = np.angle(Y)
+    return freqs, amplitude, phase
+
+
+
 def run_white_noise_stim(freqs, 
                          neurons,
                          tvec,
                          t0_idx,
-                         # job_nr, # if splitted jobs during sim
-                         cdm_data_filename='cdm_and_imem_data_neo',
-                         directory='/Users/susannedahle/CellTypeDependenceElStim/simulation_data',
+                         job_nr = None,
+                         cdm_data_filename='cdm_data_neocortical',
                          plot_imem_filename = 'plot_imem',
                          ):
     
-    # cdm_data_filename = f'{cdm_data_filename}_{job_nr}.npy' # If splitted jobs
-    cdm_data_filename = f'{cdm_data_filename}.npy'
+    if job_nr is not None:
+        directory ='/mnt/SCRATCH/susandah/output/white_noise_25_nov'
+        cdm_data_filename = f'{cdm_data_filename}_{job_nr}.npy'
+        plot_imem_filename = f'{plot_imem_filename}_{job_nr}.npy' 
+    else: 
+        directory = '/Users/susannedahle/CellTypeDependenceElStim/simulation_data'
+        cdm_data_filename = f'{cdm_data_filename}.npy'
+        plot_imem_filename = f'{plot_imem_filename}.npy'
+        
     cdm_data_file_path = os.path.join(directory, cdm_data_filename)
+    plot_imem_file_path = os.path.join(directory, plot_imem_filename)
     failed_cells = []
     
     # Initialize or load existing data
     if os.path.exists(cdm_data_file_path):
         cdm_data = np.load(cdm_data_file_path, allow_pickle=True).item()
+        
     else:
         cdm_data = {}
     
-    # plot_imem_filename = f'{plot_imem_filename}_{job_nr}.npy' # If splitted jobs
-    plot_imem_filename = f'{plot_imem_filename}.npy'
-    plot_imem_file_path = os.path.join(directory, plot_imem_filename)
-
-    # Initialize or load existing plot data
+    # Initialize or load existing data
     if os.path.exists(plot_imem_file_path):
         plot_imem_data = np.load(plot_imem_file_path, allow_pickle=True).item()
     else:
         plot_imem_data = {}
-
     
     for neuron_idx, cell_name in enumerate(neurons):
         if check_existing_data(cdm_data, cell_name):
@@ -179,18 +255,18 @@ def run_white_noise_stim(freqs,
             cell.imem = cell.imem[:, t0_idx:]
             cell.tvec = cell.tvec[t0_idx:] - cell.tvec[t0_idx]
 
-            # Compute dipole moment (z-component)
+            # ----- Compute dipole moment (z-component) -----
             cdm = get_dipole_transformation_matrix(cell) @ cell.imem
             cdm = cdm[2, :] # 2: z-cordinate, : all timestep
 
             # Get frequency and amplitude of cdm
-            freqs_s, amp_cdm_s = ns.return_freq_and_amplitude(cell.tvec, cdm)
+            freqs_s, amp_cdm_s, phase_cdm_s = return_freq_amp_phase(cell.tvec, cdm)
             
             #Find amplitude of input currents
             input_current = np.array(noise_vec)
             input_current = input_current[t0_idx:len(cdm)+t0_idx]
 
-            freqs_input, amp_input_current = ns.return_freq_and_amplitude(cell.tvec, input_current)
+            freqs_input, amp_input_current, phase_input_current = return_freq_amp_phase(cell.tvec, input_current)
             cdm_per_input_current = amp_cdm_s / amp_input_current
 
             target_freqs = sorted(np.concatenate((np.arange(1, 10, 1), np.arange(10, 100, 10), np.arange(100, 2200, 100))))
@@ -198,20 +274,52 @@ def run_white_noise_stim(freqs,
 
             matched_freqs = freqs_s[closest_indices]
             matched_amp_cdm = amp_cdm_s[0, closest_indices]
+            matched_phase_cdm = phase_cdm_s[0, closest_indices]
             matched_cdm_per_input_current = cdm_per_input_current[0, closest_indices]
+            matched_amp_input_currens = amp_input_current[0,closest_indices]
+            matched_phases_input_currens = phase_input_current[0,closest_indices]
 
-            # Distance from soma to closest endpoint                  
+            # ----- Compute Positive dipole moment (z-component) -----
+            Tm_pos, pos_idx = get_positive_dipole_transformation_matrix(cell)
+            cdm_pos = Tm_pos @ cell.imem[pos_idx, :]
+            cdm_pos = cdm_pos[2, :] # 2: z-cordinate, : all timestep
+
+            # Get frequency and amplitude of cdm
+            freqs_s_pos, amp_cdm_s_pos, phase_cdm_s_pos = return_freq_amp_phase(cell.tvec, cdm_pos)
+
+            cdm_per_input_current_pos = amp_cdm_s_pos / amp_input_current
+
+            # The frequencies from FFT will be the same so use closest_indices for total cdm
+            matched_amp_cdm_pos = amp_cdm_s_pos[0, closest_indices]
+            matched_phase_cdm_pos = phase_cdm_s_pos[0, closest_indices]
+            matched_cdm_per_input_current_pos = cdm_per_input_current_pos[0, closest_indices]
+
+            # ----- Compute Negative dipole moment (z-component) -----
+            Tm_neg, neg_idx = get_negative_dipole_transformation_matrix(cell)
+            cdm_neg = Tm_neg @ cell.imem[neg_idx, :]
+            cdm_neg = cdm_neg[2, :] # 2: z-cordinate, : all timestep
+
+            # Get frequency and amplitude of cdm
+            freqs_s_neg, amp_cdm_s_neg, phase_cdm_s_neg = return_freq_amp_phase(cell.tvec, cdm_neg)
+            
+            cdm_per_input_current_neg = amp_cdm_s_neg / amp_input_current
+
+            matched_amp_cdm_neg = amp_cdm_s_neg[0, closest_indices]
+            matched_phase_cdm_neg = phase_cdm_s_neg[0, closest_indices]
+            matched_cdm_per_input_current_neg = cdm_per_input_current_neg[0, closest_indices]
+
+
+            # ----- Morph properties -----               
             upper_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=10000)]
             bottom_z_endpoint = cell.z.mean(axis=-1)[cell.get_closest_idx(z=-10000)]
             closest_z_endpoint = min(upper_z_endpoint, abs(bottom_z_endpoint))
             distant_z_endpoint = max(upper_z_endpoint, abs(bottom_z_endpoint))
             total_len_z_direction = closest_z_endpoint + distant_z_endpoint
             symmetry_factor_z_direction = closest_z_endpoint/distant_z_endpoint
-            
-            # Soma diam
+            asymmetry_factor = abs(upper_z_endpoint - abs(bottom_z_endpoint))/upper_z_endpoint + abs(bottom_z_endpoint)
+
             soma_diam = cell.d[0]
 
-            # Avg dend diam
             tot_z_diam_abs = 0
             numb_z_comp_abs = 0
             for idx in range(cell.totnsegs):
@@ -225,10 +333,11 @@ def run_white_noise_stim(freqs,
                     
             avg_z_diam = tot_z_diam_abs/numb_z_comp_abs
 
-            # Imem amplitude and return position
+            # --- CALCULATION OF IMEM RETURN POSITION ---
 
-            # Calculate imem amplitudes at each target frequency for each segment
+            # 1. Calculate imem amplitudes and phases at each target frequency for each segment
             imem_amps_at_target_freqs = np.zeros((cell.totnsegs, len(matched_freqs)))
+            imem_phases_at_target_freqs = np.zeros((cell.totnsegs, len(matched_freqs)))
 
             # The frequencies from FFT will be the same for all segments, so get them once
             freqs_imem, _ = ns.return_freq_and_amplitude(cell.tvec, cell.imem[0, :])
@@ -236,19 +345,22 @@ def run_white_noise_stim(freqs,
 
             for idx in range(cell.totnsegs):
                 imem_seg = cell.imem[idx, :]
-                _, imem_amps = ns.return_freq_and_amplitude(cell.tvec, imem_seg)
+                _, imem_amps, imem_phases = return_freq_amp_phase(cell.tvec, imem_seg)
                 imem_amps_at_target_freqs[idx, :] = imem_amps[0, imem_freq_indices]
-
-            # Calculate frequency-dependent average return current positions
-            avg_return_pos_above_soma_freq = []
-            avg_return_pos_below_soma_freq = []
+                imem_phases_at_target_freqs[idx, :] = imem_phases[0, imem_freq_indices]
 
             z_coords = cell.z.mean(axis=-1)
-            soma_z_pos = z_coords[0]  # Soma is at index 0
+            soma_z_pos = z_coords[0]  # Assuming soma is at index 0
 
             # Get indices for segments above and below the soma once
             above_indices = np.where(z_coords > soma_z_pos)[0]
             below_indices = np.where(z_coords < soma_z_pos)[0]
+
+            # ---- Average Imem possition AMPLITUDES ----
+            avg_return_pos_above_soma_freq = []
+            avg_return_pos_below_soma_freq = []
+            sum_possition_times_imem_above = []
+            sum_possition_times_imem_below = []
 
             for f_idx in range(len(matched_freqs)):
                 current_amps_at_freq = imem_amps_at_target_freqs[:, f_idx]
@@ -261,10 +373,14 @@ def run_white_noise_stim(freqs,
                     if total_amp_above > 1e-12:  # Avoid division by zero
                         avg_pos = np.sum(pos_above * amps_above) / total_amp_above
                         avg_return_pos_above_soma_freq.append(avg_pos)
+                        sum_above = np.sum(pos_above * amps_above)
+                        sum_possition_times_imem_above.append(sum_above)
                     else:
                         avg_return_pos_above_soma_freq.append(0)
+                        sum_possition_times_imem_above.append(0)
                 else:
                     avg_return_pos_above_soma_freq.append(0)
+                    sum_possition_times_imem_above.append(0)
 
                 # For currents below the soma
                 if len(below_indices) > 0:
@@ -274,26 +390,111 @@ def run_white_noise_stim(freqs,
                     if total_amp_below > 1e-12: # Avoid division by zero
                         avg_pos = np.sum(pos_below * amps_below) / total_amp_below
                         avg_return_pos_below_soma_freq.append(avg_pos)
+                        sum_below = np.sum(pos_below * amps_below)
+                        sum_possition_times_imem_below.append(sum_below)
                     else:
                         avg_return_pos_below_soma_freq.append(0)
+                        sum_possition_times_imem_below.append(0)
                 else:
                     avg_return_pos_below_soma_freq.append(0)
+                    sum_possition_times_imem_below.append(0)
+
+            # ---- Average Imem possition VALUES AT FREQ COMPONENT ---- 
+            avg_return_pos_above_soma_wave_initial_value = []
+            avg_return_pos_below_soma_wave_initial_value = []
+            avg_return_pos_above_soma_wave_quarter_period_value = []
+            avg_return_pos_below_soma_wave_quarter_period_value = []
+
+            for f_idx, freq in enumerate(matched_freqs):
+                imem_amps = imem_amps_at_target_freqs[:, f_idx]
+                imem_phases = imem_phases_at_target_freqs[:, f_idx]
+
+                # Compute wave values for each segment
+                imem_wave_initial = imem_amps * np.sin(imem_phases)  # t = 0
+                imem_wave_quarter = imem_amps * np.sin(2 * np.pi * freq * (1 / (4 * freq)) + imem_phases)  # t = 1/4 period
+                # Simplify expression:
+                # imem_wave_quarter = imem_amps * np.sin(np.pi/2 + imem_phases)
+
+                # --- Above soma ---
+                if len(above_indices) > 0:
+                    # Initial wave value average
+                    wave_above_initial = imem_wave_initial[above_indices]
+                    pos_above = z_coords[above_indices]
+                    total_wave_above_initial = np.sum(wave_above_initial)
+                    if np.abs(total_wave_above_initial) > 1e-12:
+                        avg_pos_initial = np.sum(pos_above * wave_above_initial) / total_wave_above_initial
+                        avg_return_pos_above_soma_wave_initial_value.append(avg_pos_initial)
+                    else:
+                        avg_return_pos_above_soma_wave_initial_value.append(0)
+
+                    # Quarter-period wave value average
+                    wave_above_quarter = imem_wave_quarter[above_indices]
+                    total_wave_above_quarter = np.sum(wave_above_quarter)
+                    if np.abs(total_wave_above_quarter) > 1e-12:
+                        avg_pos_quarter = np.sum(pos_above * wave_above_quarter) / total_wave_above_quarter
+                        avg_return_pos_above_soma_wave_quarter_period_value.append(avg_pos_quarter)
+                    else:
+                        avg_return_pos_above_soma_wave_quarter_period_value.append(0)
+                else:
+                    avg_return_pos_above_soma_wave_initial_value.append(0)
+                    avg_return_pos_above_soma_wave_quarter_period_value.append(0)
+
+                # --- Below soma ---
+                if len(below_indices) > 0:
+                    # Initial wave value average
+                    wave_below_initial = imem_wave_initial[below_indices]
+                    pos_below = z_coords[below_indices]
+                    total_wave_below_initial = np.sum(wave_below_initial)
+                    if np.abs(total_wave_below_initial) > 1e-12:
+                        avg_pos_initial = np.sum(pos_below * wave_below_initial) / total_wave_below_initial
+                        avg_return_pos_below_soma_wave_initial_value.append(avg_pos_initial)
+                    else:
+                        avg_return_pos_below_soma_wave_initial_value.append(0)
+
+                    # Quarter-period wave value average
+                    wave_below_quarter = imem_wave_quarter[below_indices]
+                    total_wave_below_quarter = np.sum(wave_below_quarter)
+                    if np.abs(total_wave_below_quarter) > 1e-12:
+                        avg_pos_quarter = np.sum(pos_below * wave_below_quarter) / total_wave_below_quarter
+                        avg_return_pos_below_soma_wave_quarter_period_value.append(avg_pos_quarter)
+                    else:
+                        avg_return_pos_below_soma_wave_quarter_period_value.append(0)
+                else:
+                    avg_return_pos_below_soma_wave_initial_value.append(0)
+                    avg_return_pos_below_soma_wave_quarter_period_value.append(0)
 
             # Store data in dictionary
             cdm_data[cell_name] = {
                 'frequency': matched_freqs,
                 'cdm': matched_amp_cdm,
+                'cdm_phase': matched_phase_cdm, 
                 'cdm_per_input_current': matched_cdm_per_input_current,
+                'cdm_pos': matched_amp_cdm_pos,
+                'cdm_phase_pos': matched_phase_cdm_pos, 
+                'cdm_per_input_current_pos': matched_cdm_per_input_current_pos,
+                'cdm_neg': matched_amp_cdm_neg,
+                'cdm_phase_neg': matched_phase_cdm_neg, 
+                'cdm_per_input_current_neg': matched_cdm_per_input_current_neg,
+                'input_current_amp': matched_amp_input_currens,
+                'input_current_phase': matched_phases_input_currens, 
                 'closest_z_endpoint': closest_z_endpoint,
                 'distant_z_endpoint': distant_z_endpoint,
                 'upper_z_endpoint': upper_z_endpoint,
                 'bottom_z_endpoint': bottom_z_endpoint,
                 'total_len': total_len_z_direction,
                 'symmetry_factor': symmetry_factor_z_direction,
+                'asymmetry_factor': asymmetry_factor,
                 'soma_diam': soma_diam,
+                'tot_z_diam': tot_z_diam_abs,
                 'avg_z_diam': avg_z_diam, 
                 'avg_return_pos_above_soma': avg_return_pos_above_soma_freq,
-                'avg_return_pos_below_soma': avg_return_pos_below_soma_freq
+                'avg_return_pos_below_soma': avg_return_pos_below_soma_freq,
+                'sum_possition_times_imem_above': sum_possition_times_imem_above,
+                'sum_possition_times_imem_below': sum_possition_times_imem_below, 
+                'avg_return_pos_above_soma_wave_initial_value': avg_return_pos_above_soma_wave_initial_value,
+                'avg_return_pos_below_soma_wave_initial_value': avg_return_pos_below_soma_wave_initial_value,
+                'avg_return_pos_above_soma_wave_quarter_period_value': avg_return_pos_above_soma_wave_quarter_period_value,
+                'avg_return_pos_below_soma_wave_quarter_period_value': avg_return_pos_below_soma_wave_quarter_period_value
             }
 
 
@@ -304,20 +505,25 @@ def run_white_noise_stim(freqs,
             try:
                 # Store plot data of imem amplitudes at 10, 100, 1000 Hz
                 plot_imem_amplitudes_at_freqs = []
+                plot_imem_phases_at_freqs = []
                 plot_freqs = [10, 100, 1000]
 
                 for idx in range(cell.totnsegs):
                     imem_seg = cell.imem[idx, :]
-                    freqs_imem, imem_amps = ns.return_freq_and_amplitude(cell.tvec, imem_seg)
+                    freqs_imem, imem_amps, imem_phase = return_freq_amp_phase(cell.tvec, imem_seg)
 
                     # Extract amplitudes for the plot frequencies
                     segment_amplitudes = []
+                    segment_phases = []
                     for f in plot_freqs:
                         freq_idx = np.argmin(np.abs(freqs_imem - f))
                         amplitude = imem_amps[0, freq_idx]
+                        phase = imem_phase[0, freq_idx]
                         segment_amplitudes.append(amplitude)
+                        segment_phases.append(phase)
 
                     plot_imem_amplitudes_at_freqs.append(segment_amplitudes)
+                    plot_imem_phases_at_freqs.append(segment_phases)
 
                 # Store in dictionary
                 plot_imem_data[cell_name] = {
@@ -327,6 +533,7 @@ def run_white_noise_stim(freqs,
                     'totnsegs': cell.totnsegs,
                     'tvec': cell.tvec.tolist(),
                     'imem_amps': plot_imem_amplitudes_at_freqs,  # Shape: (totnsegs, len(plot_freqs))
+                    'imem_phases': plot_imem_phases_at_freqs,    # Shape: (totnsegs, len(plot_freqs))
                 }
 
                 # Save plot data to .npy file
@@ -334,7 +541,6 @@ def run_white_noise_stim(freqs,
                 print(f"Amplitude data has been saved to {os.path.abspath(plot_imem_file_path)}")
             except Exception as e_plot: 
                 print(f'Cell failed to store plot data due to error {e_plot}')
-
 
             del cell, cdm, freqs_s, amp_cdm_s 
         
@@ -357,11 +563,18 @@ if __name__=='__main__':
 
     h = neuron.h
 
-    all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder' #From the Blue Brain Project (Markram et al. 2015), see README
-    bbp_folder = os.path.abspath(all_cells_folder)                           
-
-    cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models' #From ElectricBrainSignals (Hagen and Ness 2023), see README
-    bbp_mod_folder = join(cell_models_folder, "bbp_mod")                   
+    if len(sys.argv) > 1:
+        print('Retreiving external filepaths')
+        all_cells_folder = '/mnt/users/susandah/neuron_stimulation/all_cells_folder' #From the Blue Brain Project (Markram et al. 2015), see README
+        bbp_folder = os.path.abspath(all_cells_folder)                             
+        cell_models_folder = '/mnt/users/susandah/neuron_stimulation/brainsignals/cell_models' #From ElectricBrainSignals (Hagen and Ness 2023), see README
+        bbp_mod_folder = join(cell_models_folder, "bbp_mod")                       
+    else:
+        print('Retreive local filepath') 
+        all_cells_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/all_cells_folder' #From the Blue Brain Project (Markram et al. 2015), see README
+        bbp_folder = os.path.abspath(all_cells_folder)                           
+        cell_models_folder = '/Users/susannedahle/CellTypeDependenceElStim/simulations/brainsignals/cell_models' #From ElectricBrainSignals (Hagen and Ness 2023), see README
+        bbp_mod_folder = join(cell_models_folder, "bbp_mod")   
 
     # List to store the neuron names
     neurons = []
@@ -379,6 +592,7 @@ if __name__=='__main__':
     remove_list = ["Ca_HVA", "Ca_LVAst", "Ca", "CaDynamics_E2", 
                    "Ih", "Im", "K_Pst", "K_Tst", "KdShu2007", "Nap_Et2",
                    "NaTa_t", "NaTs2_t", "SK_E2", "SKv3_1", "StochKv"]
+    
     cut_off = 200
     tstop = 2**12 + cut_off
     dt = 2**-6
@@ -397,30 +611,34 @@ if __name__=='__main__':
     cdm_amp_dict = {}  # To store amplitude spectra for each cell
     imem_amp_dict = {}
 
-    # Simulation for the first neuron, full list of neurons computationally expencive, reccomend to split like shown below
-    run_white_noise_stim(freqs, neurons[:1], tvec, t0_idx)
+    neurons.sort()
 
-    ## To save time, reccomended to split jobs 
-    ## Here splitted into 8 different jobs 
-    # neurons.sort()
-    # idx = int(sys.argv[1])
-    # job_nr = idx
+    if len(sys.argv) > 1:
+        idx = int(sys.argv[1])
+        job_nr = idx
+        print('Job ID given, running splitted jobs')
+        
+        if idx == 0:
+            neur_slice = neurons[:130]
+        elif idx == 1:
+            neur_slice = neurons[130:260]
+        elif idx == 2:
+            neur_slice = neurons[260:390]
+        elif idx == 3:
+            neur_slice = neurons[390:520]
+        elif idx == 4:
+            neur_slice = neurons[520:650]
+        elif idx == 5:
+            neur_slice = neurons[650:780]
+        elif idx == 6:
+            neur_slice = neurons[780:910]
+        else:
+            neur_slice = neurons[910:]
+        
+        run_white_noise_stim(freqs, neur_slice, tvec, t0_idx, job_nr = job_nr)
+
+    else:
+        print('No job ID, run one job')
+        run_white_noise_stim(freqs, neurons[:1], tvec, t0_idx)
+
     
-    # if idx == 0:
-    #     neur_slice = neurons[:130]
-    # elif idx == 1:
-    #     neur_slice = neurons[130:260]
-    # elif idx == 2:
-    #     neur_slice = neurons[260:390]
-    # elif idx == 3:
-    #     neur_slice = neurons[390:520]
-    # elif idx == 4:
-    #     neur_slice = neurons[520:650]
-    # elif idx == 5:
-    #     neur_slice = neurons[650:780]
-    # elif idx == 6:
-    #     neur_slice = neurons[780:910]
-    # else:
-    #     neur_slice = neurons[910:]
-
-    # run_white_noise_stim(freqs, neur_slice, tvec, t0_idx, job_nr)
