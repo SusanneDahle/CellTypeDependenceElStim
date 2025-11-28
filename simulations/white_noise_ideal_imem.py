@@ -243,19 +243,6 @@ def run_white_noise_imem(tstop,
                     # Store data for targer frequencies 
                     target_freqs = [5,10,50,100,500,1000]
 
-                    input_current = np.array(noise_vec)
-                    input_current = input_current[t0_idx:len(cdm)+t0_idx]
-                    freqs_input, amps_input_current, phases_input_current = return_freq_amp_phase(cell.tvec, input_current)
-                    input_amps = []
-                    input_phases = []
-                    for f in target_freqs:
-                        freq_idx = np.argmin(np.abs(freqs_input - f))
-                        amplitude = amps_input_current[0, freq_idx]
-                        phase = phases_input_current[0, freq_idx]
-                        input_amps.append(amplitude)
-                        input_phases.append(phase)
-
-
                     cdm = get_dipole_transformation_matrix(cell) @ cell.imem
                     cdm = cdm[2, :] # 2: z-cordinate, : all timestep
                     freqs_cdm, amp_cdm, phase_cdm = return_freq_amp_phase(cell.tvec, cdm)
@@ -294,6 +281,18 @@ def run_white_noise_imem(tstop,
                         phase = phase_cdm_neg[0, freq_idx]
                         cdm_neg_amps.append(amplitude)
                         cdm_neg_phases.append(phase)
+                    
+                    input_current = np.array(noise_vec)
+                    input_current = input_current[t0_idx:len(cdm)+t0_idx]
+                    freqs_input, amps_input_current, phases_input_current = return_freq_amp_phase(cell.tvec, input_current)
+                    input_amps = []
+                    input_phases = []
+                    for f in target_freqs:
+                        freq_idx = np.argmin(np.abs(freqs_input - f))
+                        amplitude = amps_input_current[0, freq_idx]
+                        phase = phases_input_current[0, freq_idx]
+                        input_amps.append(amplitude)
+                        input_phases.append(phase)
 
                     # Store imem amplitudes
                     imem_amplitudes_at_freqs = []
@@ -389,8 +388,8 @@ if __name__=='__main__':
     dend_diam_1 = np.array([2])
     soma_diam_1 = np.array([20])
 
-    upper_len_2 = np.array([200])
-    bottom_len_2 = np.array([-100])
+    upper_len_2 = np.array([100])
+    bottom_len_2 = np.array([-50])
     dend_diam_2 = np.array([2])
     soma_diam_2 = np.array([20])
 
