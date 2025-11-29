@@ -388,8 +388,8 @@ if __name__=='__main__':
     dend_diam_1 = np.array([2])
     soma_diam_1 = np.array([20])
 
-    upper_len_2 = np.array([100])
-    bottom_len_2 = np.array([-50])
+    upper_len_2 = np.array([200])
+    bottom_len_2 = np.array([-100])
     dend_diam_2 = np.array([2])
     soma_diam_2 = np.array([20])
 
